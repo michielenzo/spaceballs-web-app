@@ -1,25 +1,127 @@
-import React from 'react';
-import logo from './logo.svg';
-import './App.css';
+import React, {useState, useEffect, useRef} from 'react'
+import './App.css'
+import WebSocket from 'isomorphic-ws'
+
+interface Player {
+  id: string
+  name: string
+  status: string
+}
+
+interface LobbyState {
+  gameMode: string
+  players: Player[]
+}
+
+interface SendLobbyStateToClientsDTO {
+  lobbyState: LobbyState,
+  yourId: string,
+  messageType: string
+}
+
+interface ChooseNameToServerDTO {
+  playerId: string,
+  chosenName: string,
+  messageType: string
+}
 
 function App() {
+
+  // Server state
+  const [gameMode, setGameMode] = useState('')
+  const [players, setPlayers] = useState<Player[]>([])
+  const [messageType, setMessageType] = useState('')
+  const [yourId, setYourId] = useState('')
+
+  // Client state
+  const [playerName, setPlayerName] = useState('')
+
+  const socketRef = useRef<WebSocket | null>(null)
+
+  useEffect(() => {
+    if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+      // socketRef.current = new WebSocket('ws://localhost:8080/player')
+      socketRef.current = new WebSocket('ws://81.0.249.1:8080/player')
+      const socket = socketRef.current
+
+      socket.onopen = () => console.log('WebSocket connected')
+
+      socket.onmessage = (event) => {
+        console.log(event.data)
+
+        if (typeof event.data === "string") {
+          const jsonObject = JSON.parse(event.data)
+
+
+          switch(jsonObject["messageType"]){
+            case "sendLobbyStateToClients":
+              const dto: SendLobbyStateToClientsDTO = jsonObject
+              setGameMode(dto.lobbyState.gameMode)
+              setPlayers(dto.lobbyState.players)
+              setMessageType(dto.messageType)
+              setYourId(dto.yourId)
+              break;
+          }
+        } else {
+          console.error("Websocket message is not of type String.")
+        }
+      }
+
+      socket.onclose = () => console.log('WebSocket disconnected')
+    }
+  }, [])
+
+  const chooseNameHandler = () => {
+    console.log('Name chosen:', playerName)
+    const dto: ChooseNameToServerDTO = {
+      playerId: yourId,
+      chosenName: playerName,
+      messageType: "chooseNameToServer"
+    };
+    console.log(JSON.stringify(dto))
+    sendMsgToWsServer(JSON.stringify(dto))
+  }
+
+  const startGameHandler = () => {
+    console.log('Game started');
+  };
+
+  function sendMsgToWsServer(message: string) {
+    if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
+      socketRef.current.send(message)
+    } else {
+      console.error('WebSocket is not open. Message not sent.')
+    }
+  }
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+      <div className="App">
+        <h1>Space balls</h1>
+        <div className="lobby-gui">
+          <table>
+            <tr>
+              <th>Players</th>
+              <th>Status</th>
+            </tr>
+            {players.map(player => (
+                <tr>
+                  <td>{player.name}</td>
+                  <td>{player.status}</td>
+                </tr>
+            ))}
+          </table>
+          <div className="controls">
+            <input
+                id="playername-input"
+                type="text"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+            />
+            <button onClick={chooseNameHandler}>Choose name</button>
+            <button onClick={startGameHandler}>Start game</button>
+          </div>
+        </div>
+      </div>
   );
 }
 

@@ -9,7 +9,9 @@ COPY package.json /app/
 COPY package-lock.json /app/
 COPY tsconfig.json /app/
 
-RUN npm install
-RUN npm run build
+#RUN npm install
+#RUN npm run build
 
-CMD serve -s build
+CMD npm install && \
+    npm run build && \
+    serve -s build
