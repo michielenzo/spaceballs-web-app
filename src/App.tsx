@@ -1,6 +1,8 @@
 import React, {useState, useEffect, useRef} from 'react'
 import './App.css'
 import WebSocket from 'isomorphic-ws'
+import SpaceBalls from "./components/SpaceBalls";
+import SpaceBallsMethods from "./components/SpaceBalls"
 
 interface Player {
   id: string
@@ -25,6 +27,14 @@ interface ChooseNameToServerDTO {
   messageType: string
 }
 
+interface StartGameToServerDTO {
+  messageType: string
+}
+
+interface SpaceBallsMethods {
+  onGameStateChange: (newState: string) => void;
+}
+
 function App() {
 
   // Server state
@@ -32,11 +42,14 @@ function App() {
   const [players, setPlayers] = useState<Player[]>([])
   const [messageType, setMessageType] = useState('')
   const [yourId, setYourId] = useState('')
+  const [gameStarted, setGameStarted] = useState(false);
 
   // Client state
   const [playerName, setPlayerName] = useState('')
 
   const socketRef = useRef<WebSocket | null>(null)
+
+  const spaceBallsRef = useRef<SpaceBallsMethods>(null);
 
   useEffect(() => {
     if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
@@ -47,11 +60,8 @@ function App() {
       socket.onopen = () => console.log('WebSocket connected')
 
       socket.onmessage = (event) => {
-        console.log(event.data)
-
         if (typeof event.data === "string") {
           const jsonObject = JSON.parse(event.data)
-
 
           switch(jsonObject["messageType"]){
             case "sendLobbyStateToClients":
@@ -60,6 +70,11 @@ function App() {
               setPlayers(dto.lobbyState.players)
               setMessageType(dto.messageType)
               setYourId(dto.yourId)
+              break;
+            case "sendSpaceBallsGameStateToClients":
+              if (spaceBallsRef.current) {
+                spaceBallsRef.current.onGameStateChange(event.data);
+              }
               break;
           }
         } else {
@@ -72,22 +87,25 @@ function App() {
   }, [])
 
   const chooseNameHandler = () => {
-    console.log('Name chosen:', playerName)
     const dto: ChooseNameToServerDTO = {
       playerId: yourId,
       chosenName: playerName,
       messageType: "chooseNameToServer"
     };
-    console.log(JSON.stringify(dto))
     sendMsgToWsServer(JSON.stringify(dto))
   }
 
   const startGameHandler = () => {
-    console.log('Game started');
+    const dto: StartGameToServerDTO = {
+      messageType: "startGameToServer"
+    }
+    sendMsgToWsServer(JSON.stringify(dto))
+    setGameStarted(true)
   };
 
   function sendMsgToWsServer(message: string) {
     if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
+      console.log("Sending message.")
       socketRef.current.send(message)
     } else {
       console.error('WebSocket is not open. Message not sent.')
@@ -96,31 +114,37 @@ function App() {
 
   return (
       <div className="App">
-        <h1>Space balls</h1>
-        <div className="lobby-gui">
-          <table>
-            <tr>
-              <th>Players</th>
-              <th>Status</th>
-            </tr>
-            {players.map(player => (
-                <tr>
-                  <td>{player.name}</td>
-                  <td>{player.status}</td>
-                </tr>
-            ))}
-          </table>
-          <div className="controls">
-            <input
-                id="playername-input"
-                type="text"
-                value={playerName}
-                onChange={(e) => setPlayerName(e.target.value)}
-            />
-            <button onClick={chooseNameHandler}>Choose name</button>
-            <button onClick={startGameHandler}>Start game</button>
-          </div>
-        </div>
+        {gameStarted ? (
+            <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
+        ) : (
+            <div className="App">
+              <h1>Space balls</h1>
+              <div className="lobby-gui">
+                <table>
+                  <tr>
+                    <th>Players</th>
+                    <th>Status</th>
+                  </tr>
+                  {players.map(player => (
+                      <tr>
+                        <td>{player.name}</td>
+                        <td>{player.status}</td>
+                      </tr>
+                  ))}
+                </table>
+                <div className="controls">
+                  <input
+                      id="playername-input"
+                      type="text"
+                      value={playerName}
+                      onChange={(e) => setPlayerName(e.target.value)}
+                  />
+                  <button onClick={chooseNameHandler}>Choose name</button>
+                  <button onClick={startGameHandler}>Start game</button>
+                </div>
+              </div>
+            </div>
+        )}
       </div>
   );
 }
