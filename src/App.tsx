@@ -40,7 +40,6 @@ function App() {
   // Server state
   const [gameMode, setGameMode] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
-  const [messageType, setMessageType] = useState('')
   const [yourId, setYourId] = useState('')
   const [gameStarted, setGameStarted] = useState(false);
 
@@ -52,8 +51,12 @@ function App() {
   const spaceBallsRef = useRef<SpaceBallsMethods>(null);
 
   useEffect(() => {
+    setupWebsocket()
+  }, [])
+
+  function setupWebsocket(){
     if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
-      // socketRef.current = new WebSocket('ws://localhost:8080/player')
+      //socketRef.current = new WebSocket('ws://localhost:8080/player')
       socketRef.current = new WebSocket('ws://81.0.249.1:8080/player')
       const socket = socketRef.current
 
@@ -68,7 +71,6 @@ function App() {
               const dto: SendLobbyStateToClientsDTO = jsonObject
               setGameMode(dto.lobbyState.gameMode)
               setPlayers(dto.lobbyState.players)
-              setMessageType(dto.messageType)
               setYourId(dto.yourId)
               break;
             case "sendSpaceBallsGameStateToClients":
@@ -76,6 +78,9 @@ function App() {
                 spaceBallsRef.current.onGameStateChange(event.data);
               }
               break;
+            case "backToLobbyToServer":
+              setGameStarted(false)
+              break
           }
         } else {
           console.error("Websocket message is not of type String.")
@@ -84,7 +89,7 @@ function App() {
 
       socket.onclose = () => console.log('WebSocket disconnected')
     }
-  }, [])
+  }
 
   const chooseNameHandler = () => {
     const dto: ChooseNameToServerDTO = {
@@ -105,7 +110,6 @@ function App() {
 
   function sendMsgToWsServer(message: string) {
     if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
-      console.log("Sending message.")
       socketRef.current.send(message)
     } else {
       console.error('WebSocket is not open. Message not sent.')

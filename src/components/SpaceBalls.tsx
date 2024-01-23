@@ -53,10 +53,36 @@ interface PowerUp {
     height: number
 }
 
+interface InputState {
+    wKey: boolean
+    aKey: boolean
+    sKey: boolean
+    dKey: boolean
+}
+
+interface SendInputStateToServerDTO {
+    wKey: boolean
+    aKey: boolean
+    sKey: boolean
+    dKey: boolean
+    messageType: "sendInputStateToServer"
+    sessionId: string
+}
+
+interface BackToLobbyToServerDTO {
+    playerId: string
+    messageType: "backToLobbyToServer"
+}
+
 // Use forwardRef to allow refs to be forwarded to this component
 const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) => {
 
+    const { socketRef, yourId } = props;
+
     const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
+    const inputState = useRef<InputState>(init)
 
     let medKitImage = new Image()
     let inverterImage = new Image()
@@ -79,12 +105,64 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }));
 
     useEffect(() => {
+        setupKeyboardInput()
+        setupImages()
+    }, [])
+
+    function setupImages(){
         medKitImage.src = MedKitImage
         inverterImage.src = ArrowsImage
         shieldImage.src = RssShieldImage
         heartImage.src = HeartImage
         skullImage.src = SkullImage
-    }, [])
+    }
+
+    function setupKeyboardInput(){
+        document.addEventListener("keydown",(event) => {
+            let stateChanged = false
+
+            switch (event.code) {
+                case "KeyW": if (!inputState.current.wKey) { inputState.current.wKey = true; stateChanged = true } break
+                case "KeyA": if (!inputState.current.aKey) { inputState.current.aKey = true; stateChanged = true } break
+                case "KeyS": if (!inputState.current.sKey) { inputState.current.sKey = true; stateChanged = true } break
+                case "KeyD": if (!inputState.current.dKey) { inputState.current.dKey = true; stateChanged = true } break
+            }
+
+            if (stateChanged) { sendInputStateToServer() }
+        })
+
+        document.addEventListener("keyup",(event) => {
+            console.log(event)
+            switch (event.code){
+                case "KeyW": inputState.current.wKey = false; break
+                case "KeyA": inputState.current.aKey = false; break
+                case "KeyS": inputState.current.sKey = false; break
+                case "KeyD": inputState.current.dKey = false; break
+                case "Escape": requestToGoBackToLobby(); return;
+            }
+            sendInputStateToServer()
+        })
+    }
+
+    function requestToGoBackToLobby(){
+        let dto: BackToLobbyToServerDTO = { playerId: yourId, messageType: "backToLobbyToServer" }
+
+        if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
+            socketRef.current.send(JSON.stringify(dto))
+        } else { console.error('WebSocket is not open. Message not sent.') }
+    }
+
+    function sendInputStateToServer() {
+        let dto: SendInputStateToServerDTO = {
+            sessionId: yourId, messageType: "sendInputStateToServer",
+            wKey: inputState.current.wKey, aKey: inputState.current.aKey,
+            sKey: inputState.current.sKey, dKey: inputState.current.dKey
+        }
+
+        if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
+            socketRef.current.send(JSON.stringify(dto))
+        } else { console.error('WebSocket is not open. Message not sent.') }
+    }
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, dto: SendSpaceBallsGameStateToClientsDTO){
         ctx.fillStyle = '#000000';
@@ -114,8 +192,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if(player.health > 0){
                 ctx.fillStyle = '#8a2be2'
                 ctx.fillRect(player.xPosition, player.yPosition, player.width, player.height)
+                if(player.hasShield) {
+                    ctx.drawImage(shieldImage, player.xPosition - 5, player.yPosition - 5, player.width + 10, player.height + 10)
+                }
             } else if (player.health === 0) {
-                console.log("hgasihgsuifgogsghaggagghghgghh")
                 ctx.drawImage(skullImage, player.xPosition, player.yPosition, player.width, player.height)
             }
         })
