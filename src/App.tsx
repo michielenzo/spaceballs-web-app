@@ -3,7 +3,6 @@ import './App.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls from "./components/SpaceBalls";
 import SpaceBallsMethods from "./components/SpaceBalls"
-import {json} from "node:stream/consumers";
 
 interface Player {
   id: string
@@ -43,6 +42,7 @@ function App() {
   const [players, setPlayers] = useState<Player[]>([])
   const [yourId, setYourId] = useState('')
   const [gameStarted, setGameStarted] = useState(false);
+  const [connectionTimedOut, setConnectionTimedOut] = useState(false);
 
   // Client state
   const [playerName, setPlayerName] = useState('')
@@ -61,7 +61,10 @@ function App() {
       socketRef.current = new WebSocket('ws://81.0.249.1:8080/player')
       const socket = socketRef.current
 
-      socket.onopen = () => console.log('WebSocket connected')
+      socket.onopen = () => {
+        console.log('WebSocket connected')
+        setConnectionTimedOut(false)
+      }
 
       socket.onmessage = (event) => {
         if (typeof event.data === "string") {
@@ -91,7 +94,10 @@ function App() {
         }
       }
 
-      socket.onclose = () => console.log('WebSocket disconnected')
+      socket.onclose = () => {
+        console.log('WebSocket disconnected')
+        setConnectionTimedOut(true)
+      }
     }
   }
 
@@ -124,6 +130,11 @@ function App() {
       <div className="App">
         {gameStarted ? (
             <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
+        ) : connectionTimedOut ? (
+            <div className="connection-timeout">
+              <h1>Connection Timed Out</h1>
+              <p>Refresh the page to reestablish.</p>
+            </div>
         ) : (
             <div className="App">
               <h1>Space balls</h1>

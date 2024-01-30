@@ -234,7 +234,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     return (
         <div>
-            <canvas ref={canvasRef} width="1100" height="700"></canvas>
+            <canvas ref={canvasRef} width="1100" height="650"></canvas>
         </div>
     );
 });
