@@ -31,26 +31,21 @@ interface GameState {
 interface Player {
     sessionId: string
     name: string
-    xPosition: number
-    yPosition: number
+    x: number
+    y: number
     health: number
-    hasShield: boolean
-    width: number
-    height: number
+    shield: boolean
 }
 
 interface FireBall {
-    xPosition: number
-    yPosition: number
-    diameter: number
+    x: number
+    y: number
 }
 
 interface PowerUp {
     type: string
-    xPosition: number
-    yPosition: number
-    width: number
-    height: number
+    x: number
+    y: number
 }
 
 interface InputState {
@@ -89,6 +84,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     let shieldImage = new Image()
     const heartImage = new Image()
     const skullImage = new Image()
+
+    const powerUpWidth: number = 40
+    const powerUpHeight: number = 40
+    const playerWidth: number = 50
+    const playerHeight: number = 50
+    const fireBallDiameter: number = 50
 
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
@@ -187,29 +188,30 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         dto.gameState.players.forEach((player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
-            ctx.fillText(player.name, player.xPosition, player.yPosition - 12)
+            ctx.fillText(player.name, player.x, player.y - 12)
 
             if(player.health > 0){
                 ctx.fillStyle = '#8a2be2'
-                ctx.fillRect(player.xPosition, player.yPosition, player.width, player.height)
-                if(player.hasShield) {
-                    ctx.drawImage(shieldImage, player.xPosition - 5, player.yPosition - 5, player.width + 10, player.height + 10)
+                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+                if(player.shield) {
+                    ctx.drawImage(shieldImage, player.x - 5, player.y - 5, playerWidth + 10, playerHeight + 10)
                 }
             } else if (player.health === 0) {
-                ctx.drawImage(skullImage, player.xPosition, player.yPosition, player.width, player.height)
+                ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
             }
         })
+
 
         dto.gameState.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
-                    ctx.drawImage(inverterImage, powerUp.xPosition , powerUp.yPosition, powerUp.width, powerUp.height)
+                    ctx.drawImage(inverterImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
                     break
                 case "med_kit":
-                    ctx.drawImage(medKitImage, powerUp.xPosition , powerUp.yPosition, powerUp.width, powerUp.height)
+                    ctx.drawImage(medKitImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
                     break
                 case "shield":
-                    ctx.drawImage(shieldImage, powerUp.xPosition , powerUp.yPosition, powerUp.width, powerUp.height)
+                    ctx.drawImage(shieldImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
                     break
             }
         })
@@ -217,7 +219,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         dto.gameState.fireBalls.forEach((ball) => {
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();
-            ctx.arc(ball.xPosition, ball.yPosition, ball.diameter / 2, 0, Math.PI * 2);
+            ctx.arc(ball.x, ball.y, fireBallDiameter / 2, 0, Math.PI * 2);
             ctx.fill();
         })
     }
