@@ -95,6 +95,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string) {
             const dto: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
+            console.log(dto)
 
             if (canvasRef.current){
                 const ctx = canvasRef.current.getContext('2d');
@@ -166,9 +167,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, dto: SendSpaceBallsGameStateToClientsDTO){
+        // Resetting the sources every frame fixes a bug where images are unloaded when a player leaves.
+        // It does not seem to impact performance in a significant way.
+        setupImages()
+
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Render HUD
         let startY = 30
         let startX = 20
         let spacingX = 30
@@ -185,6 +191,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
         }
 
+        // Render players
         dto.gameState.players.forEach((player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
@@ -201,7 +208,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
         })
 
-
+        // Render powerUps
         dto.gameState.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
@@ -216,6 +223,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
         })
 
+        // Render fireBalls
         dto.gameState.fireBalls.forEach((ball) => {
             ctx.fillStyle = '#ff0000';
             ctx.beginPath();

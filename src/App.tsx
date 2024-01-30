@@ -3,6 +3,7 @@ import './App.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls from "./components/SpaceBalls";
 import SpaceBallsMethods from "./components/SpaceBalls"
+import {json} from "node:stream/consumers";
 
 interface Player {
   id: string
@@ -74,6 +75,7 @@ function App() {
               setYourId(dto.yourId)
               break;
             case "sendSpaceBallsGameStateToClients":
+              if(!gameStarted) setGameStarted(true)
               if (spaceBallsRef.current) {
                 spaceBallsRef.current.onGameStateChange(event.data);
               }
@@ -81,6 +83,8 @@ function App() {
             case "backToLobbyToServer":
               setGameStarted(false)
               break
+            case "":
+
           }
         } else {
           console.error("Websocket message is not of type String.")
