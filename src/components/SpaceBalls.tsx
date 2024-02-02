@@ -3,8 +3,10 @@ import WebSocket from 'isomorphic-ws';
 import ArrowsImage from '../resources/images/arrows.png'
 import HeartImage from '../resources/images/heart.jpg'
 import MedKitImage from '../resources/images/medkit.png'
-import RssShieldImage from '../resources/images/rsshield.png'
 import SkullImage from '../resources/images/skull.png'
+import MeteoriteImage from '../resources/images/meteorite.png'
+import ShieldSheetImage from '../resources/images/shield-spritesheet.png'
+import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
 
 // Component config
 interface SpaceBallsProps {
@@ -79,11 +81,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
 
-    let medKitImage = new Image()
-    let inverterImage = new Image()
-    let shieldImage = new Image()
+    const medKitImage = new Image()
+    const inverterImage = new Image()
     const heartImage = new Image()
     const skullImage = new Image()
+    const meteoriteImage = new Image()
+    const shieldSpriteSheet = new Image()
+
+    const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
 
     const powerUpWidth: number = 40
     const powerUpHeight: number = 40
@@ -95,7 +100,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string) {
             const dto: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
-            console.log(dto)
 
             if (canvasRef.current){
                 const ctx = canvasRef.current.getContext('2d');
@@ -109,14 +113,16 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     useEffect(() => {
         setupKeyboardInput()
         setupImages()
+        shieldAnimation.setTickRate(3)
     }, [])
 
     function setupImages(){
         medKitImage.src = MedKitImage
         inverterImage.src = ArrowsImage
-        shieldImage.src = RssShieldImage
         heartImage.src = HeartImage
         skullImage.src = SkullImage
+        meteoriteImage.src = MeteoriteImage
+        shieldSpriteSheet.src = ShieldSheetImage
     }
 
     function setupKeyboardInput(){
@@ -134,7 +140,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         document.addEventListener("keyup",(event) => {
-            console.log(event)
             switch (event.code){
                 case "KeyW": inputState.current.wKey = false; break
                 case "KeyA": inputState.current.aKey = false; break
@@ -174,6 +179,45 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+        // Render players
+        dto.gameState.players.forEach((player) => {
+            ctx.fillStyle = '#ffffff'
+            ctx.font = '17px Arial'
+            ctx.fillText(player.name, player.x, player.y - 12)
+
+            if(player.health > 0){
+                ctx.fillStyle = '#8a2be2'
+                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+                if(player.shield) {
+                    shieldAnimation.drawFrame(ctx, player.x - 15, player.y - 15, playerWidth + 30, playerHeight + 30)
+                }
+            } else if (player.health === 0) {
+                ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
+            }
+        })
+
+        // Render powerUps]
+        dto.gameState.powerUps.forEach((powerUp) => {
+            switch (powerUp.type) {
+                case "inverter":
+                    ctx.drawImage(inverterImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
+                    break
+                case "med_kit":
+                    ctx.drawImage(medKitImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
+                    break
+                case "shield":
+                    shieldAnimation.drawFrame(
+                        ctx, powerUp.x , powerUp.y,
+                        powerUpWidth * 1.5, powerUpHeight * 1.5)
+                    break
+            }
+        })
+
+        // Render fireBalls
+        dto.gameState.fireBalls.forEach((ball) => {
+            ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
+        })
+
         // Render HUD
         let startY = 30
         let startX = 20
@@ -191,45 +235,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
         }
 
-        // Render players
-        dto.gameState.players.forEach((player) => {
-            ctx.fillStyle = '#ffffff'
-            ctx.font = '17px Arial'
-            ctx.fillText(player.name, player.x, player.y - 12)
-
-            if(player.health > 0){
-                ctx.fillStyle = '#8a2be2'
-                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
-                if(player.shield) {
-                    ctx.drawImage(shieldImage, player.x - 5, player.y - 5, playerWidth + 10, playerHeight + 10)
-                }
-            } else if (player.health === 0) {
-                ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
-            }
-        })
-
-        // Render powerUps
-        dto.gameState.powerUps.forEach((powerUp) => {
-            switch (powerUp.type) {
-                case "inverter":
-                    ctx.drawImage(inverterImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
-                    break
-                case "med_kit":
-                    ctx.drawImage(medKitImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
-                    break
-                case "shield":
-                    ctx.drawImage(shieldImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
-                    break
-            }
-        })
-
-        // Render fireBalls
-        dto.gameState.fireBalls.forEach((ball) => {
-            ctx.fillStyle = '#ff0000';
-            ctx.beginPath();
-            ctx.arc(ball.x, ball.y, fireBallDiameter / 2, 0, Math.PI * 2);
-            ctx.fill();
-        })
+        shieldAnimation.tick()
     }
 
     return (
