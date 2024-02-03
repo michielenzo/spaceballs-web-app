@@ -6,6 +6,7 @@ import MedKitImage from '../resources/images/medkit.png'
 import SkullImage from '../resources/images/skull.png'
 import MeteoriteImage from '../resources/images/meteorite.png'
 import ShieldSheetImage from '../resources/images/shield-spritesheet.png'
+import SaucerImage from '../resources/images/saucer.png'
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
 
 // Component config
@@ -86,14 +87,15 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const heartImage = new Image()
     const skullImage = new Image()
     const meteoriteImage = new Image()
+    const saucerImage = new Image()
     const shieldSpriteSheet = new Image()
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
 
     const powerUpWidth: number = 40
     const powerUpHeight: number = 40
-    const playerWidth: number = 50
-    const playerHeight: number = 50
+    const playerWidth: number = 60
+    const playerHeight: number = 42
     const fireBallDiameter: number = 50
 
     // Use useImperativeHandle to expose specific functions to parent Components.
@@ -122,6 +124,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         heartImage.src = HeartImage
         skullImage.src = SkullImage
         meteoriteImage.src = MeteoriteImage
+        saucerImage.src = SaucerImage
         shieldSpriteSheet.src = ShieldSheetImage
     }
 
@@ -187,16 +190,20 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
             if(player.health > 0){
                 ctx.fillStyle = '#8a2be2'
-                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+                ctx.drawImage(saucerImage, player.x, player.y, playerWidth, playerHeight)
                 if(player.shield) {
-                    shieldAnimation.drawFrame(ctx, player.x - 15, player.y - 15, playerWidth + 30, playerHeight + 30)
+                    let xOffset = 5
+                    let yOffset = 12
+                    shieldAnimation.drawFrame(ctx,
+                        player.x - xOffset, player.y - yOffset,
+                        playerWidth + 10, playerWidth + 10)
                 }
             } else if (player.health === 0) {
                 ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
             }
         })
 
-        // Render powerUps]
+        // Render powerUps
         dto.gameState.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
