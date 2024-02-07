@@ -29,4 +29,4 @@ COPY ssl/certificate.pem /etc/nginx/ssl/certificate.pem
 COPY ssl/private.key /etc/nginx/ssl/private.key
 
 # Expose port 3000 for the app and port 443 for SSL
-EXPOSE 3000 443
+EXPOSE 443 80
