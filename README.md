@@ -11,3 +11,7 @@ Deploy for production with Docker:
 `docker run -d -p 3000:3000 --name michielidema-website-container michielidema-website`  
 Port 3000 of the container is linked to port 3000 of the hosting server.   
 The -d flag is used to run it as a daemon.
+
+Or deploy with docker compose:
+`docker compose up -d`
+The -d flag is used to run it as a daemon.
