@@ -58,7 +58,7 @@ function App() {
   function setupWebsocket(){
     if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
       //socketRef.current = new WebSocket('ws://localhost:8080/player')
-      socketRef.current = new WebSocket('wss://81.0.249.1:8080/player')
+      socketRef.current = new WebSocket('wss://81.0.249.1/player')
       const socket = socketRef.current
 
       socket.onopen = () => {
