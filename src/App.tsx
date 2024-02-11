@@ -61,6 +61,10 @@ function App() {
       socketRef.current = new WebSocket('wss://81.0.249.1/player')
       const socket = socketRef.current
 
+      socket.onerror = (event) => {
+        console.log(event)
+      }
+
       socket.onopen = () => {
         console.log('WebSocket connected')
         setConnectionTimedOut(false)
