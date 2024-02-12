@@ -7,7 +7,11 @@ Deploy for production with Docker:
 
 1. Build the image  
 `docker build -t michielidema-website .`
-2. Run the image inside a container  
-`docker run -d -p 3000:3000 --name michielidema-website-container michielidema-website`  
-Port 3000 of the container is linked to port 3000 of the hosting server.   
+2. Run the image inside a container
+` docker run -p 80:80 -p 443:443 -d --name michielidema-website-container michielidema-website`
+The -d flag is used to run it as a daemon. Port 80 is the main entrance of your domain. 
+Port 443 is the ssl port.
+
+Or deploy with docker compose:
+`docker compose up -d`
 The -d flag is used to run it as a daemon.

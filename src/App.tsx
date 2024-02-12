@@ -58,8 +58,12 @@ function App() {
   function setupWebsocket(){
     if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
       //socketRef.current = new WebSocket('ws://localhost:8080/player')
-      socketRef.current = new WebSocket('ws://81.0.249.1:8080/player')
+      socketRef.current = new WebSocket('wss://michielidema.net/player')
       const socket = socketRef.current
+
+      socket.onerror = (event) => {
+        console.log(event)
+      }
 
       socket.onopen = () => {
         console.log('WebSocket connected')
