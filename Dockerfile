@@ -8,6 +8,8 @@ COPY package-lock.json /app/
 COPY tsconfig.json /app/
 COPY src /app/src
 COPY public /app/public
+COPY .env.production /app/
+COPY .env.development /app/
 
 RUN npm install
 RUN npm run build
