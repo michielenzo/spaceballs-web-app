@@ -57,6 +57,7 @@ function App() {
 
   function setupWebsocket(){
     if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+      console.log(process.env.NODE_ENV)
       const gameServerWssUrl = process.env.REACT_APP_GAME_SERVER_WS_URL as string;
       socketRef.current = new WebSocket(gameServerWssUrl)
       const socket = socketRef.current
