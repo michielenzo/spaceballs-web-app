@@ -29,3 +29,5 @@ yarn-error.log*
 # SSL
 ssl
 
+# Other
+.env.development

@@ -57,8 +57,8 @@ function App() {
 
   function setupWebsocket(){
     if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
-      //socketRef.current = new WebSocket('ws://localhost:8080/player')
-      socketRef.current = new WebSocket('wss://michielidema.net/player')
+      const gameServerWssUrl = process.env.REACT_APP_GAME_SERVER_WS_URL as string;
+      socketRef.current = new WebSocket(gameServerWssUrl)
       const socket = socketRef.current
 
       socket.onerror = (event) => {
