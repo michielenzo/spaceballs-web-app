@@ -35,6 +35,12 @@ interface SpaceBallsMethods {
   onGameStateChange: (newState: string) => void;
 }
 
+interface HeartbeatCheckDTO {
+  messageType: string
+}
+
+const HEARTBEAT_INTERVAL_MILLIS = 15000;
+
 function App() {
 
   // Server state
@@ -42,7 +48,8 @@ function App() {
   const [players, setPlayers] = useState<Player[]>([])
   const [yourId, setYourId] = useState('')
   const [gameStarted, setGameStarted] = useState(false);
-  const [connectionTimedOut, setConnectionTimedOut] = useState(false);
+  const [connectionLost, setConnectionLost] = useState(false);
+  const [connectionFailed, setConnectionFailed] = useState(false);
 
   // Client state
   const [playerName, setPlayerName] = useState('')
@@ -63,12 +70,15 @@ function App() {
       const socket = socketRef.current
 
       socket.onerror = (event) => {
+        setConnectionFailed(true)
+        setConnectionLost(false)
         console.log(event)
       }
 
       socket.onopen = () => {
-        console.log('WebSocket connected')
-        setConnectionTimedOut(false)
+        setConnectionLost(false)
+        setConnectionFailed(false)
+        heartbeat(socket)
       }
 
       socket.onmessage = (event) => {
@@ -91,8 +101,9 @@ function App() {
             case "backToLobbyToServer":
               setGameStarted(false)
               break
-            case "":
-
+            case "heartbeatAcknowledge":
+              heartbeat(socket)
+              break;
           }
         } else {
           console.error("Websocket message is not of type String.")
@@ -101,9 +112,24 @@ function App() {
 
       socket.onclose = () => {
         console.log('WebSocket disconnected')
-        setConnectionTimedOut(true)
+        setConnectionLost(true)
       }
     }
+  }
+
+  function heartbeat (socket: WebSocket){
+    const dto: HeartbeatCheckDTO = {
+      messageType: "heartbeatCheck"
+    }
+
+    setTimeout(() => {
+      socket?.send(JSON.stringify(dto), (err) => {
+        if (err){
+          setConnectionLost(true)
+          console.log(err)
+        }
+      })
+    }, HEARTBEAT_INTERVAL_MILLIS);
   }
 
   const chooseNameHandler = () => {
@@ -135,9 +161,14 @@ function App() {
       <div className="App">
         {gameStarted ? (
             <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
-        ) : connectionTimedOut ? (
-            <div className="connection-timeout">
-              <h1>Connection Timed Out</h1>
+        ): connectionFailed ?(
+            <div className="connection-failed">
+              <h1>Could not connect to the server.</h1>
+              <p>Refresh the page, or try again later if the problem persists.</p>
+            </div>
+        ) : connectionLost ? (
+            <div className="connection-lost">
+              <h1>Connection to the server is lost.</h1>
               <p>Refresh the page to reestablish.</p>
             </div>
         ) : (
