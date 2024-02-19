@@ -207,7 +207,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         dto.gameState.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
-                    ctx.drawImage(inverterImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
+                    ctx.drawImage(inverterImage,
+                        powerUp.x-5 , powerUp.y-5, powerUpWidth+10, powerUpHeight+10)
                     break
                 case "med_kit":
                     ctx.drawImage(medKitImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
