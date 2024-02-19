@@ -77,7 +77,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     const { socketRef, yourId } = props;
 
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
@@ -104,9 +104,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             const dto: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
 
             if (canvasRef.current){
-                const ctx = canvasRef.current.getContext('2d');
-                if(ctx){
-                    render(ctx, canvasRef.current, dto)
+                if ("getContext" in canvasRef.current) {
+                    const ctx = canvasRef.current.getContext('2d');
+                    if(ctx){
+                        render(ctx, canvasRef.current, dto)
+                    }
                 }
             }
         }
@@ -119,13 +121,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }, [])
 
     function setupImages(){
-        medKitImage.src = MedKitImage
-        inverterImage.src = ArrowsImage
-        heartImage.src = HeartImage
-        skullImage.src = SkullImage
-        meteoriteImage.src = MeteoriteImage
-        saucerImage.src = SaucerImage
-        shieldSpriteSheet.src = ShieldSheetImage
+        medKitImage.src = MedKitImage as string
+        inverterImage.src = ArrowsImage as string
+        heartImage.src = HeartImage as string
+        skullImage.src = SkullImage as string
+        meteoriteImage.src = MeteoriteImage as string
+        saucerImage.src = SaucerImage as string
+        shieldSpriteSheet.src = ShieldSheetImage as string
     }
 
     function setupKeyboardInput(){
@@ -158,7 +160,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         let dto: BackToLobbyToServerDTO = { playerId: yourId, messageType: "backToLobbyToServer" }
 
         if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
-            socketRef.current.send(JSON.stringify(dto))
+            if (socketRef.current instanceof WebSocket) {
+                socketRef.current.send(JSON.stringify(dto))
+            }
         } else { console.error('WebSocket is not open. Message not sent.') }
     }
 
@@ -170,7 +174,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         }
 
         if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
-            socketRef.current.send(JSON.stringify(dto))
+            if (socketRef.current instanceof WebSocket) {
+                socketRef.current.send(JSON.stringify(dto))
+            }
         } else { console.error('WebSocket is not open. Message not sent.') }
     }
 
@@ -178,6 +184,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         // Resetting the sources every frame fixes a bug where images are unloaded when a player leaves.
         // It does not seem to impact performance in a significant way.
         setupImages()
+
+        console.log(dto)
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);

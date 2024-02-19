@@ -56,63 +56,74 @@ function App() {
 
   const socketRef = useRef<WebSocket | null>(null)
 
-  const spaceBallsRef = useRef<SpaceBallsMethods>(null);
+  const spaceBallsRef = useRef<SpaceBallsMethods | null>(null);
+
 
   useEffect(() => {
     setupWebsocket()
   }, [])
 
   function setupWebsocket(){
-    if (!socketRef.current || socketRef.current.readyState === WebSocket.CLOSED) {
+    if (!socketRef.current || !(socketRef.current instanceof WebSocket) || socketRef.current.readyState === WebSocket.CLOSED) {
       console.log(process.env.NODE_ENV)
       const gameServerWssUrl = process.env.REACT_APP_GAME_SERVER_WS_URL as string;
       socketRef.current = new WebSocket(gameServerWssUrl)
       const socket = socketRef.current
 
-      socket.onerror = (event) => {
-        setConnectionFailed(true)
-        setConnectionLost(false)
-        console.log(event)
-      }
-
-      socket.onopen = () => {
-        setConnectionLost(false)
-        setConnectionFailed(false)
-        heartbeat(socket)
-      }
-
-      socket.onmessage = (event) => {
-        if (typeof event.data === "string") {
-          const jsonObject = JSON.parse(event.data)
-
-          switch(jsonObject["messageType"]){
-            case "sendLobbyStateToClients":
-              const dto: SendLobbyStateToClientsDTO = jsonObject
-              setGameMode(dto.lobbyState.gameMode)
-              setPlayers(dto.lobbyState.players)
-              setYourId(dto.yourId)
-              break;
-            case "sendSpaceBallsGameStateToClients":
-              if(!gameStarted) setGameStarted(true)
-              if (spaceBallsRef.current) {
-                spaceBallsRef.current.onGameStateChange(event.data);
-              }
-              break;
-            case "backToLobbyToServer":
-              setGameStarted(false)
-              break
-            case "heartbeatAcknowledge":
-              heartbeat(socket)
-              break;
-          }
-        } else {
-          console.error("Websocket message is not of type String.")
+      if (socket instanceof WebSocket) {
+        socket.onerror = (event) => {
+          setConnectionFailed(true)
+          setConnectionLost(false)
+          console.log(event)
         }
       }
 
-      socket.onclose = () => {
-        console.log('WebSocket disconnected')
-        setConnectionLost(true)
+      if (socket instanceof WebSocket) {
+        socket.onopen = () => {
+          setConnectionLost(false)
+          setConnectionFailed(false)
+          heartbeat(socket)
+        }
+      }
+
+      if (socket instanceof WebSocket) {
+        socket.onmessage = (event) => {
+          if (typeof event.data === "string") {
+            const jsonObject = JSON.parse(event.data)
+
+            switch (jsonObject["messageType"]) {
+              case "sendLobbyStateToClients":
+                const dto: SendLobbyStateToClientsDTO = jsonObject
+                setGameMode(dto.lobbyState.gameMode)
+                setPlayers(dto.lobbyState.players)
+                setYourId(dto.yourId)
+                break;
+              case "sendSpaceBallsGameStateToClients":
+                if (!gameStarted) setGameStarted(true)
+                if (spaceBallsRef.current) {
+                  if ("onGameStateChange" in spaceBallsRef.current) {
+                    spaceBallsRef.current.onGameStateChange(event.data);
+                  }
+                }
+                break;
+              case "backToLobbyToServer":
+                setGameStarted(false)
+                break
+              case "heartbeatAcknowledge":
+                heartbeat(socket)
+                break;
+            }
+          } else {
+            console.error("Websocket message is not of type String.")
+          }
+        }
+      }
+
+      if (socket instanceof WebSocket) {
+        socket.onclose = () => {
+          console.log('WebSocket disconnected')
+          setConnectionLost(true)
+        }
       }
     }
   }
@@ -151,7 +162,9 @@ function App() {
 
   function sendMsgToWsServer(message: string) {
     if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
-      socketRef.current.send(message)
+      if (socketRef.current instanceof WebSocket) {
+        socketRef.current.send(message)
+      }
     } else {
       console.error('WebSocket is not open. Message not sent.')
     }
