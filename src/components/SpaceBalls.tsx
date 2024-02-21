@@ -7,6 +7,9 @@ import SkullImage from '../resources/images/skull.png'
 import MeteoriteImage from '../resources/images/meteorite.png'
 import ShieldSheetImage from '../resources/images/shield-spritesheet.png'
 import SaucerImage from '../resources/images/saucer.png'
+import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
+import HomingBallImage from '../resources/images/homing_ball.png'
+import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
 
 // Component config
@@ -29,6 +32,7 @@ interface GameState {
     players: Player[]
     fireBalls: FireBall[]
     powerUps: PowerUp[]
+    homingBalls: HomingBall[]
 }
 
 interface Player {
@@ -38,6 +42,12 @@ interface Player {
     y: number
     health: number
     shield: boolean
+    inverted: boolean
+}
+
+interface HomingBall {
+    x: number,
+    y: number
 }
 
 interface FireBall {
@@ -89,8 +99,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const meteoriteImage = new Image()
     const saucerImage = new Image()
     const shieldSpriteSheet = new Image()
+    const controlInverterPUImage = new Image()
+    const homingBallImage = new Image()
+    const controlsInvertedSheet = new Image()
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
+    const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55,50,6)
 
     const powerUpWidth: number = 40
     const powerUpHeight: number = 40
@@ -118,6 +132,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         setupKeyboardInput()
         setupImages()
         shieldAnimation.setTickRate(3)
+        controlsInvertedAnimation.setTickRate(6)
     }, [])
 
     function setupImages(){
@@ -128,6 +143,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         meteoriteImage.src = MeteoriteImage as string
         saucerImage.src = SaucerImage as string
         shieldSpriteSheet.src = ShieldSheetImage as string
+        controlInverterPUImage.src = ControlInverterPU as string
+        homingBallImage.src = HomingBallImage as string
+        controlsInvertedSheet.src = ControlsInvertedSheetImage as string
     }
 
     function setupKeyboardInput(){
@@ -185,10 +203,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         // It does not seem to impact performance in a significant way.
         setupImages()
 
-        console.log(dto)
-
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Render homing balls
+        dto.gameState.homingBalls.forEach((homingBall) => {
+            ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, powerUpWidth+10, powerUpHeight+10)
+        })
 
         // Render players
         dto.gameState.players.forEach((player) => {
@@ -205,6 +226,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                     shieldAnimation.drawFrame(ctx,
                         player.x - xOffset, player.y - yOffset,
                         playerWidth + 10, playerWidth + 10)
+                }
+                if(player.inverted) {
+                    controlsInvertedAnimation.drawFrame(ctx, player.x, player.y, playerWidth, playerHeight)
                 }
             } else if (player.health === 0) {
                 ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
@@ -226,6 +250,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                         ctx, powerUp.x , powerUp.y,
                         powerUpWidth * 1.5, powerUpHeight * 1.5)
                     break
+                case "control_inverter":
+                    ctx.drawImage(controlInverterPUImage,
+                        powerUp.x-5 , powerUp.y-5, powerUpWidth+10, powerUpHeight+10)
             }
         })
 
@@ -252,6 +279,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         }
 
         shieldAnimation.tick()
+        controlsInvertedAnimation.tick()
     }
 
     return (
