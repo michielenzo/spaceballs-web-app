@@ -1,8 +1,10 @@
 import React, {useState, useEffect, useRef} from 'react'
 import './App.css'
 import WebSocket from 'isomorphic-ws'
-import SpaceBalls from "./components/SpaceBalls";
+import SpaceBalls from "./components/SpaceBalls"
 import SpaceBallsMethods from "./components/SpaceBalls"
+import GameExplanationImage from './resources/images/game_explanation.png'
+
 
 interface Player {
   id: string
@@ -57,7 +59,6 @@ function App() {
   const socketRef = useRef<WebSocket | null>(null)
 
   const spaceBallsRef = useRef<SpaceBallsMethods | null>(null);
-
 
   useEffect(() => {
     setupWebsocket()
@@ -187,28 +188,33 @@ function App() {
         ) : (
             <div className="App">
               <h1>Space balls</h1>
-              <div className="lobby-gui">
-                <table>
-                  <tr>
-                    <th>Players</th>
-                    <th>Status</th>
-                  </tr>
-                  {players.map(player => (
-                      <tr>
-                        <td>{player.name}</td>
-                        <td>{player.status}</td>
-                      </tr>
-                  ))}
-                </table>
-                <div className="controls">
-                  <input
-                      id="playername-input"
-                      type="text"
-                      value={playerName}
-                      onChange={(e) => setPlayerName(e.target.value)}
-                  />
-                  <button onClick={chooseNameHandler}>Choose name</button>
-                  <button onClick={startGameHandler}>Start game</button>
+              <div className='lobby-explanation-wrapper'>
+                <div className="lobby-gui">
+                  <table>
+                    <tr>
+                      <th>Players</th>
+                      <th>Status</th>
+                    </tr>
+                    {players.map(player => (
+                        <tr>
+                          <td>{player.name}</td>
+                          <td>{player.status}</td>
+                        </tr>
+                    ))}
+                  </table>
+                  <div className="controls">
+                    <input
+                        id="playername-input"
+                        type="text"
+                        value={playerName}
+                        onChange={(e) => setPlayerName(e.target.value)}
+                    />
+                    <button onClick={chooseNameHandler}>Choose name</button>
+                    <button onClick={startGameHandler}>Start game</button>
+                  </div>
+                </div>
+                <div className='game_explanation'>   
+                  <img src={GameExplanationImage} alt="Game explanation image" />
                 </div>
               </div>
             </div>

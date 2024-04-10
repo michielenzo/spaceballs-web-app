@@ -12,15 +12,25 @@ html, body {
   background-position: center;
   background-repeat: no-repeat;
   height: 100vh;
+  width: 100vw;
 }
 
 .lobby-gui {
-  display: flex;
-  flex-direction: column; /* Stack items vertically */
-  align-items: center; /* Center items horizontally */
-  justify-content: center; /* Center items vertically */
+  display: inline-block;
   height: auto;
-  padding: 50px;
+  padding-right: 20px;
+}
+
+.game_explanation {
+  display: inline-block;
+  background-color: #00000080;
+  padding: 20px;
+  border: 1px solid #ddd;
+}
+
+.lobby-explanation-wrapper {
+  display: flex;
+  justify-content: center;
 }
 
 .controls {
@@ -32,6 +42,7 @@ h1 {
   padding-top: 20px;
   color: white;
   font-size: xxx-large;
+  display: block;
 }
 
 table {
