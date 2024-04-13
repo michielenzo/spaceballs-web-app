@@ -134,18 +134,18 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         shieldAnimation.setTickRate(3)
         controlsInvertedAnimation.setTickRate(6)
     }, [])
-
+    
     function setupImages(){
-        medKitImage.src = MedKitImage as string
-        inverterImage.src = ArrowsImage as string
-        heartImage.src = HeartImage as string
-        skullImage.src = SkullImage as string
-        meteoriteImage.src = MeteoriteImage as string
-        saucerImage.src = SaucerImage as string
-        shieldSpriteSheet.src = ShieldSheetImage as string
-        controlInverterPUImage.src = ControlInverterPU as string
-        homingBallImage.src = HomingBallImage as string
-        controlsInvertedSheet.src = ControlsInvertedSheetImage as string
+        if(medKitImage.src === "") medKitImage.src = MedKitImage as string
+        if(inverterImage.src === "") inverterImage.src = ArrowsImage as string
+        if(heartImage.src === "") heartImage.src = HeartImage as string
+        if(skullImage.src === "") skullImage.src = SkullImage as string
+        if(meteoriteImage.src === "") meteoriteImage.src = MeteoriteImage as string
+        if(saucerImage.src === "") saucerImage.src = SaucerImage as string
+        if(shieldSpriteSheet.src === "") shieldSpriteSheet.src = ShieldSheetImage as string
+        if(controlInverterPUImage.src === "") controlInverterPUImage.src = ControlInverterPU as string
+        if(homingBallImage.src === "") homingBallImage.src = HomingBallImage as string
+        if(controlsInvertedSheet.src === "") controlsInvertedSheet.src = ControlsInvertedSheetImage as string
     }
 
     function setupKeyboardInput(){
