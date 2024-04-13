@@ -82,6 +82,12 @@ interface BackToLobbyToServerDTO {
     messageType: "backToLobbyToServer"
 }
 
+enum GameloopState{
+    NOT_STARTED,
+    RUNNING,
+    PAUSED
+}
+
 // Use forwardRef to allow refs to be forwarded to this component
 const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) => {
 
@@ -91,6 +97,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
+    const gameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    let gameLoopState: GameloopState = GameloopState.NOT_STARTED
+    
 
     const medKitImage = new Image()
     const inverterImage = new Image()
@@ -115,16 +124,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string) {
-            const dto: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
-
-            if (canvasRef.current){
-                if ("getContext" in canvasRef.current) {
-                    const ctx = canvasRef.current.getContext('2d');
-                    if(ctx){
-                        render(ctx, canvasRef.current, dto)
-                    }
-                }
-            }
+            gameState.current = JSON.parse(newState)
         }
     }));
 
@@ -133,7 +133,50 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         setupImages()
         shieldAnimation.setTickRate(3)
         controlsInvertedAnimation.setTickRate(6)
+
+        if(gameLoopState == GameloopState.NOT_STARTED){
+            gameLoopState = GameloopState.RUNNING
+            gameLoop()
+        }
     }, [])
+
+    /*
+     *  This Gameloop implementation uses a recursive structure.
+     *  It loops on the animation frame which is optimized for animations.
+     *  A regular while loop in a async function will be blocking
+     */
+    function gameLoop() {
+        let lastFrameTime = Date.now();
+        let frameRate = 60 // Note this might get semi-overridden as requestAnimationFrame has its own rate.
+        let millisPerFrame = 1000 / frameRate    
+
+        const tick = () => {
+            const now = Date.now();
+            const deltaTime = now - lastFrameTime;
+    
+            if (deltaTime >= millisPerFrame) {
+                tickFrame(); 
+                lastFrameTime = now - (deltaTime % millisPerFrame);
+            }
+    
+            if (gameLoopState === GameloopState.RUNNING) {
+                requestAnimationFrame(tick); // Schedule the next frame
+            }
+        };
+
+        requestAnimationFrame(tick);
+    }
+
+    function tickFrame() {
+        if (canvasRef.current){
+            if ("getContext" in canvasRef.current) {
+                const ctx = canvasRef.current.getContext('2d');
+                if(ctx){
+                    render(ctx, canvasRef.current)
+                }
+            }
+        }
+    }
     
     function setupImages(){
         if(medKitImage.src === "") medKitImage.src = MedKitImage as string
@@ -198,8 +241,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         } else { console.error('WebSocket is not open. Message not sent.') }
     }
 
-    function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, dto: SendSpaceBallsGameStateToClientsDTO){
+    function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         setupImages()
+        
+        //console.log("ctx:" + ctx + " canvas: " + canvas)
+
+        let dto = gameState.current 
+        if(dto === undefined) return   
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -280,6 +328,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         controlsInvertedAnimation.tick()
     }
 
+    console.log('Rendering SpaceBalls component');
     return (
         <div>
             <canvas ref={canvasRef} width="1100" height="650"></canvas>
