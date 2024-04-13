@@ -199,8 +199,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement, dto: SendSpaceBallsGameStateToClientsDTO){
-        // Resetting the sources every frame fixes a bug where images are unloaded when a player leaves.
-        // It does not seem to impact performance in a significant way.
         setupImages()
 
         ctx.fillStyle = '#000000';
