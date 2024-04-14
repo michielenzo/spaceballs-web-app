@@ -4,6 +4,7 @@ import WebSocket from 'isomorphic-ws'
 import SpaceBalls from "./components/SpaceBalls"
 import SpaceBallsMethods from "./components/SpaceBalls"
 import GameExplanationImage from './resources/images/game_explanation.png'
+import { BoundedStack } from './services/BoundedStack'
 
 
 interface Player {
@@ -55,10 +56,15 @@ function App() {
 
   // Client state
   const [playerName, setPlayerName] = useState('')
-
   const socketRef = useRef<WebSocket | null>(null)
-
   const spaceBallsRef = useRef<SpaceBallsMethods | null>(null);
+
+  // Other
+  let currentInterArrivalTime: number
+  let lastGSMessageMillis: number | undefined = undefined
+  let averageInterArrivalTime: number
+  const interArrivalTimeStack = new BoundedStack<number>(3)
+
 
   useEffect(() => {
     setupWebsocket()
@@ -100,12 +106,16 @@ function App() {
                 setYourId(dto.yourId)
                 break;
               case "sendSpaceBallsGameStateToClients":
-                if (!gameStarted) setGameStarted(true)
+                if (!gameStarted) { setGameStarted(true) }
+
+                calculateInterArrivalTime()
+
                 if (spaceBallsRef.current) {
                   if ("onGameStateChange" in spaceBallsRef.current) {
                     spaceBallsRef.current.onGameStateChange(event.data);
                   }
                 }
+
                 break;
               case "backToLobbyToServer":
                 setGameStarted(false)
@@ -127,6 +137,19 @@ function App() {
         }
       }
     }
+  }
+
+  function calculateInterArrivalTime(){
+    let currentMillis: number = Date.now()
+
+    if(lastGSMessageMillis !== undefined) {                 
+      currentInterArrivalTime = currentMillis - lastGSMessageMillis 
+      interArrivalTimeStack.push(currentInterArrivalTime)
+      averageInterArrivalTime = interArrivalTimeStack.get()
+        .reduce((acc, val) => acc + val, 0) / interArrivalTimeStack.size(); 
+    }
+
+    lastGSMessageMillis = currentMillis    
   }
 
   function heartbeat (socket: WebSocket){
