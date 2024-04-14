@@ -34,7 +34,7 @@ interface StartGameToServerDTO {
 }
 
 interface SpaceBallsMethods {
-  onGameStateChange: (newState: string, iat: InterArrivalTime) => void;
+  onGameStateChange: (newState: string, iat: InterArrivalTime) => void
 }
 
 interface HeartbeatCheckDTO {
@@ -48,7 +48,7 @@ export interface InterArrivalTime {
   timeline: BoundedStack<number>
 }
 
-const HEARTBEAT_INTERVAL_MILLIS = 15000;
+const HEARTBEAT_INTERVAL_MILLIS = 15000
 
 function App() {
 
@@ -56,14 +56,14 @@ function App() {
   const [gameMode, setGameMode] = useState('')
   const [players, setPlayers] = useState<Player[]>([])
   const [yourId, setYourId] = useState('')
-  const [gameStarted, setGameStarted] = useState(false);
-  const [connectionLost, setConnectionLost] = useState(false);
-  const [connectionFailed, setConnectionFailed] = useState(false);
+  const [gameStarted, setGameStarted] = useState(false)
+  const [connectionLost, setConnectionLost] = useState(false)
+  const [connectionFailed, setConnectionFailed] = useState(false)
 
   // Client state
   const [playerName, setPlayerName] = useState('')
   const socketRef = useRef<WebSocket | null>(null)
-  const spaceBallsRef = useRef<SpaceBallsMethods | null>(null);
+  const spaceBallsRef = useRef<SpaceBallsMethods | null>(null)
 
   // Other
   let iat: InterArrivalTime = {
@@ -71,7 +71,7 @@ function App() {
     average: undefined,
     lastMillis: undefined,
     timeline: new BoundedStack<number>(100)
-  };
+  }
 
   useEffect(() => {
     setupWebsocket()
@@ -80,7 +80,7 @@ function App() {
   function setupWebsocket(){
     if (!socketRef.current || !(socketRef.current instanceof WebSocket) || socketRef.current.readyState === WebSocket.CLOSED) {
       console.log(process.env.NODE_ENV)
-      const gameServerWssUrl = process.env.REACT_APP_GAME_SERVER_WS_URL as string;
+      const gameServerWssUrl = process.env.REACT_APP_GAME_SERVER_WS_URL as string
       socketRef.current = new WebSocket(gameServerWssUrl)
       const socket = socketRef.current
 
@@ -111,7 +111,7 @@ function App() {
                 setGameMode(dto.lobbyState.gameMode)
                 setPlayers(dto.lobbyState.players)
                 setYourId(dto.yourId)
-                break;
+                break
               case "sendSpaceBallsGameStateToClients":
                 if (!gameStarted) { setGameStarted(true) }
 
@@ -119,17 +119,17 @@ function App() {
 
                 if (spaceBallsRef.current) {
                   if ("onGameStateChange" in spaceBallsRef.current) {
-                    spaceBallsRef.current.onGameStateChange(event.data, iat);
+                    spaceBallsRef.current.onGameStateChange(event.data, iat)
                   }
                 }
 
-                break;
+                break
               case "backToLobbyToServer":
                 setGameStarted(false)
                 break
               case "heartbeatAcknowledge":
                 heartbeat(socket)
-                break;
+                break
             }
           } else {
             console.error("Websocket message is not of type String.")
@@ -153,7 +153,7 @@ function App() {
       iat.current = currentMillis - iat.lastMillis 
       iat.timeline.push(iat.current)
       iat.average = iat.timeline.get()
-        .reduce((acc, val) => acc + val, 0) / iat.timeline.size(); 
+        .reduce((acc, val) => acc + val, 0) / iat.timeline.size() 
     }
 
     iat.lastMillis = currentMillis    
@@ -171,7 +171,7 @@ function App() {
           console.log(err)
         }
       })
-    }, HEARTBEAT_INTERVAL_MILLIS);
+    }, HEARTBEAT_INTERVAL_MILLIS)
   }
 
   const chooseNameHandler = () => {
@@ -179,7 +179,7 @@ function App() {
       playerId: yourId,
       chosenName: playerName,
       messageType: "chooseNameToServer"
-    };
+    }
     sendMsgToWsServer(JSON.stringify(dto))
   }
 
@@ -189,7 +189,7 @@ function App() {
     }
     sendMsgToWsServer(JSON.stringify(dto))
     setGameStarted(true)
-  };
+  }
 
   function sendMsgToWsServer(message: string) {
     if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
@@ -250,7 +250,7 @@ function App() {
             </div>
         )}
       </div>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -1,6 +1,6 @@
-import React, {forwardRef, useEffect, useImperativeHandle, useRef} from 'react';
-import WebSocket from 'isomorphic-ws';
-import { InterArrivalTime } from '../App';
+import React, {forwardRef, useEffect, useImperativeHandle, useRef} from 'react'
+import WebSocket from 'isomorphic-ws'
+import { InterArrivalTime } from '../App'
 import { BoundedStack } from './../services/BoundedStack'
 import ArrowsImage from '../resources/images/arrows.png'
 import HeartImage from '../resources/images/heart.jpg'
@@ -16,12 +16,12 @@ import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
 
 // Component config
 interface SpaceBallsProps {
-    socketRef: React.MutableRefObject<WebSocket | null>;
-    yourId: string;
+    socketRef: React.MutableRefObject<WebSocket | null>
+    yourId: string
 }
 
 interface SpaceBallsMethods {
-    onGameStateChange: (newState: string, iat: InterArrivalTime) => void;
+    onGameStateChange: (newState: string, iat: InterArrivalTime) => void
 }
 
 // GameState
@@ -93,9 +93,9 @@ enum GameloopState{
 // Use forwardRef to allow refs to be forwarded to this component
 const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) => {
 
-    const { socketRef, yourId } = props;
+    const { socketRef, yourId } = props
 
-    const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
@@ -128,7 +128,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         average: undefined,
         lastMillis: undefined,
         timeline: new BoundedStack<number>(100)
-    };
+    }
 
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
@@ -139,7 +139,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
             gameState.current = JSON.parse(newState)
         }
-    }));
+    }))
 
     useEffect(() => {
         setupKeyboardInput()
@@ -159,31 +159,31 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
      *  A regular while loop in a async function will be blocking.
      */
     function gameLoop() {
-        let lastFrameTime = Date.now();
+        let lastFrameTime = Date.now()
         let frameRate = 60 // Note this might get semi-overridden as requestAnimationFrame has its own rate.
         let millisPerFrame = 1000 / frameRate    
 
         const tick = () => {
-            const now = Date.now();
-            const deltaTime = now - lastFrameTime;
+            const now = Date.now()
+            const deltaTime = now - lastFrameTime
     
             if (deltaTime >= millisPerFrame) {
-                tickFrame(); 
-                lastFrameTime = now - (deltaTime % millisPerFrame);
+                tickFrame()
+                lastFrameTime = now - (deltaTime % millisPerFrame)
             }
     
             if (gameLoopState === GameloopState.RUNNING) {
-                requestAnimationFrame(tick); // Schedule the next frame
+                requestAnimationFrame(tick) // Schedule the next frame
             }
-        };
+        }
 
-        requestAnimationFrame(tick);
+        requestAnimationFrame(tick)
     }
 
     function tickFrame() {
         if (canvasRef.current){
             if ("getContext" in canvasRef.current) {
-                const ctx = canvasRef.current.getContext('2d');
+                const ctx = canvasRef.current.getContext('2d')
                 if(ctx){
                     render(ctx, canvasRef.current)
                 }
@@ -267,8 +267,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             prevGs = prevGamestate.current.gameState
         }
 
-        ctx.fillStyle = '#000000';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = '#000000'
+        ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Render homing balls
         gs.homingBalls.forEach((homingBall) => {
@@ -350,7 +350,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         <div>
             <canvas ref={canvasRef} width="1100" height="650"></canvas>
         </div>
-    );
-});
+    )
+})
 
-export default SpaceBalls;
+export default SpaceBalls
