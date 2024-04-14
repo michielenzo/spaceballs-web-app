@@ -175,7 +175,7 @@ function App() {
       <div className="App">
         {gameStarted ? (
             <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
-        ): connectionFailed ?(
+        ): connectionFailed ? (
             <div className="connection-failed">
               <h1>Could not connect to the server.</h1>
               <p>Refresh the page, or try again later if the problem persists.</p>

@@ -143,7 +143,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     /*
      *  This Gameloop implementation uses a recursive structure.
      *  It loops on the animation frame which is optimized for animations.
-     *  A regular while loop in a async function will be blocking
+     *  A regular while loop in a async function will be blocking.
      */
     function gameLoop() {
         let lastFrameTime = Date.now();
@@ -243,8 +243,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         setupImages()
-        
-        //console.log("ctx:" + ctx + " canvas: " + canvas)
 
         let dto = gameState.current 
         if(dto === undefined) return   
