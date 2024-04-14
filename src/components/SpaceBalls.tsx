@@ -131,8 +131,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     useEffect(() => {
         setupKeyboardInput()
         setupImages()
-        shieldAnimation.setTickRate(3)
-        controlsInvertedAnimation.setTickRate(6)
+        shieldAnimation.setTickRate(5)
+        controlsInvertedAnimation.setTickRate(8)
 
         if(gameLoopState == GameloopState.NOT_STARTED){
             gameLoopState = GameloopState.RUNNING
