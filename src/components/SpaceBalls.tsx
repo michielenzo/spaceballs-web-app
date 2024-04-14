@@ -1,5 +1,7 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef} from 'react';
 import WebSocket from 'isomorphic-ws';
+import { InterArrivalTime } from '../App';
+import { BoundedStack } from './../services/BoundedStack'
 import ArrowsImage from '../resources/images/arrows.png'
 import HeartImage from '../resources/images/heart.jpg'
 import MedKitImage from '../resources/images/medkit.png'
@@ -19,7 +21,7 @@ interface SpaceBallsProps {
 }
 
 interface SpaceBallsMethods {
-    onGameStateChange: (newState: string) => void;
+    onGameStateChange: (newState: string, iat: InterArrivalTime) => void;
 }
 
 // GameState
@@ -121,9 +123,17 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const playerHeight: number = 42
     const fireBallDiameter: number = 50
 
+    let iat: InterArrivalTime = {
+        current: undefined,
+        average: undefined,
+        lastMillis: undefined,
+        timeline: new BoundedStack<number>(100)
+    };
+
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
-        onGameStateChange(newState: string) {
+        onGameStateChange(newState: string, tempIat: InterArrivalTime) {
+            iat = tempIat
             if(gameState.current !== undefined){
                 prevGamestate.current = gameState.current
             }

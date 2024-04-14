@@ -6,7 +6,6 @@ import SpaceBallsMethods from "./components/SpaceBalls"
 import GameExplanationImage from './resources/images/game_explanation.png'
 import { BoundedStack } from './services/BoundedStack'
 
-
 interface Player {
   id: string
   name: string
@@ -35,11 +34,18 @@ interface StartGameToServerDTO {
 }
 
 interface SpaceBallsMethods {
-  onGameStateChange: (newState: string) => void;
+  onGameStateChange: (newState: string, iat: InterArrivalTime) => void;
 }
 
 interface HeartbeatCheckDTO {
   messageType: string
+}
+
+export interface InterArrivalTime {
+  current: number | undefined
+  average: number | undefined
+  lastMillis: number | undefined
+  timeline: BoundedStack<number>
 }
 
 const HEARTBEAT_INTERVAL_MILLIS = 15000;
@@ -60,11 +66,12 @@ function App() {
   const spaceBallsRef = useRef<SpaceBallsMethods | null>(null);
 
   // Other
-  let currentInterArrivalTime: number
-  let lastGSMessageMillis: number | undefined = undefined
-  let averageInterArrivalTime: number
-  const interArrivalTimeStack = new BoundedStack<number>(3)
-
+  let iat: InterArrivalTime = {
+    current: undefined,
+    average: undefined,
+    lastMillis: undefined,
+    timeline: new BoundedStack<number>(100)
+  };
 
   useEffect(() => {
     setupWebsocket()
@@ -112,7 +119,7 @@ function App() {
 
                 if (spaceBallsRef.current) {
                   if ("onGameStateChange" in spaceBallsRef.current) {
-                    spaceBallsRef.current.onGameStateChange(event.data);
+                    spaceBallsRef.current.onGameStateChange(event.data, iat);
                   }
                 }
 
@@ -142,14 +149,14 @@ function App() {
   function calculateInterArrivalTime(){
     let currentMillis: number = Date.now()
 
-    if(lastGSMessageMillis !== undefined) {                 
-      currentInterArrivalTime = currentMillis - lastGSMessageMillis 
-      interArrivalTimeStack.push(currentInterArrivalTime)
-      averageInterArrivalTime = interArrivalTimeStack.get()
-        .reduce((acc, val) => acc + val, 0) / interArrivalTimeStack.size(); 
+    if(iat.lastMillis !== undefined) {                 
+      iat.current = currentMillis - iat.lastMillis 
+      iat.timeline.push(iat.current)
+      iat.average = iat.timeline.get()
+        .reduce((acc, val) => acc + val, 0) / iat.timeline.size(); 
     }
 
-    lastGSMessageMillis = currentMillis    
+    iat.lastMillis = currentMillis    
   }
 
   function heartbeat (socket: WebSocket){
