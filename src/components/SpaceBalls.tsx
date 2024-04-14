@@ -98,9 +98,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
     const gameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    const prevGamestate = useRef<SendSpaceBallsGameStateToClientsDTO>()
     let gameLoopState: GameloopState = GameloopState.NOT_STARTED
     
-
     const medKitImage = new Image()
     const inverterImage = new Image()
     const heartImage = new Image()
@@ -113,7 +113,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const controlsInvertedSheet = new Image()
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
-    const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55,50,6)
+    const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55, 50, 6)
 
     const powerUpWidth: number = 40
     const powerUpHeight: number = 40
@@ -124,6 +124,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string) {
+            if(gameState.current !== undefined){
+                prevGamestate.current = gameState.current
+            }
             gameState.current = JSON.parse(newState)
         }
     }));
@@ -244,19 +247,26 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         setupImages()
 
-        let dto = gameState.current 
-        if(dto === undefined) return   
+        if(gameState.current === undefined) return
+        let gs: GameState = gameState.current.gameState 
+
+        let prevGs: GameState
+        if(prevGamestate.current === undefined) {
+            prevGs = gameState.current.gameState
+        } else {
+            prevGs = prevGamestate.current.gameState
+        }
 
         ctx.fillStyle = '#000000';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
         // Render homing balls
-        dto.gameState.homingBalls.forEach((homingBall) => {
+        gs.homingBalls.forEach((homingBall) => {
             ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, powerUpWidth+10, powerUpHeight+10)
         })
 
         // Render players
-        dto.gameState.players.forEach((player) => {
+        gs.players.forEach((player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
             ctx.fillText(player.name, player.x, player.y - 12)
@@ -280,7 +290,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render powerUps
-        dto.gameState.powerUps.forEach((powerUp) => {
+        gs.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
                     ctx.drawImage(inverterImage,
@@ -301,7 +311,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render fireBalls
-        dto.gameState.fireBalls.forEach((ball) => {
+        prevGs.fireBalls.forEach((ball) => {
             ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
         })
 
@@ -310,8 +320,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         let startX = 20
         let spacingX = 30
         let spacingY = 47
-        for (let playerIdx = 0; playerIdx < dto.gameState.players.length; playerIdx++) {
-            let player: Player = dto.gameState.players[playerIdx]
+        for (let playerIdx = 0; playerIdx < gs.players.length; playerIdx++) {
+            let player: Player = gs.players[playerIdx]
 
             ctx.fillStyle = '#ffffff'
             ctx.font = '15px Arial'
@@ -326,7 +336,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         controlsInvertedAnimation.tick()
     }
 
-    console.log('Rendering SpaceBalls component');
     return (
         <div>
             <canvas ref={canvasRef} width="1100" height="650"></canvas>
