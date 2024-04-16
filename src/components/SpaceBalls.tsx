@@ -99,8 +99,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
-    const gameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
-    const prevGamestate = useRef<SendSpaceBallsGameStateToClientsDTO>()
+
+    const serverGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    const prevServerGamestate = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    const predictedGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+
     let gameLoopState: GameloopState = GameloopState.NOT_STARTED
     
     const medKitImage = new Image()
@@ -134,10 +137,18 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string, tempIat: InterArrivalTime) {
             iat = tempIat
-            if(gameState.current !== undefined){
-                prevGamestate.current = gameState.current
+            if(serverGameState.current !== undefined){
+                prevServerGamestate.current = serverGameState.current
             }
-            gameState.current = JSON.parse(newState)
+            serverGameState.current = JSON.parse(newState)
+
+            if(prevServerGamestate.current === undefined) {
+                prevServerGamestate.current = serverGameState.current
+            }
+            if(predictedGameState.current == undefined){
+                predictedGameState.current = serverGameState.current
+            }
+            // Idea: throw away gamestate updat if it arrives after a later made request gamestate already arrived
         }
     }))
 
@@ -185,6 +196,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if ("getContext" in canvasRef.current) {
                 const ctx = canvasRef.current.getContext('2d')
                 if(ctx){
+                    predictGamestate()
+                    setupImages()
                     render(ctx, canvasRef.current)
                 }
             }
@@ -254,18 +267,17 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         } else { console.error('WebSocket is not open. Message not sent.') }
     }
 
+    function predictGamestate(){
+        
+        // Do the thing
+    }
+
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
-        setupImages()
+        if(serverGameState.current === undefined) return
+        let gs: GameState = serverGameState.current.gameState 
 
-        if(gameState.current === undefined) return
-        let gs: GameState = gameState.current.gameState 
-
-        let prevGs: GameState
-        if(prevGamestate.current === undefined) {
-            prevGs = gameState.current.gameState
-        } else {
-            prevGs = prevGamestate.current.gameState
-        }
+        if(prevServerGamestate.current === undefined) return
+        let prevGs: GameState = prevServerGamestate.current.gameState
 
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
