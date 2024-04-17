@@ -1,11 +1,11 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef} from 'react';
 import WebSocket from 'isomorphic-ws';
 import ArrowsImage from '../resources/images/arrows.png'
-import HeartImage from '../resources/images/heart.jpg'
+import HeartImage from '../resources/images/heart_cropped.jpg'
 import MedKitImage from '../resources/images/medkit.png'
-import SkullImage from '../resources/images/skull.png'
-import MeteoriteImage from '../resources/images/meteorite.png'
-import ShieldSheetImage from '../resources/images/shield-spritesheet.png'
+import SkullImage from '../resources/images/skull_cropped.png'
+import MeteoriteImage from '../resources/images/meteorite-cropped.png'
+import ShieldSheetImage from '../resources/images/shield-spritesheet_cropped.png'
 import SaucerImage from '../resources/images/saucer.png'
 import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
