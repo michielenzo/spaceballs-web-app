@@ -65,7 +65,7 @@ function App() {
   const socketRef = useRef<WebSocket | null>(null)
   const spaceBallsRef = useRef<SpaceBallsMethods | null>(null)
 
-  // Other
+  //Other
   let iat: InterArrivalTime = {
     current: undefined,
     average: undefined,

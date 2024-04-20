@@ -13,7 +13,6 @@ import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
-import { distance2D } from '../utility/math'
 
 // Component config
 interface SpaceBallsProps {
@@ -108,12 +107,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
 
-    // const serverGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
-    // const prevServerGamestate = useRef<SendSpaceBallsGameStateToClientsDTO>()
-    // const predictedGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
-    // const interpolatedGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
-
-
     let gameLoopState: GameloopState = GameloopState.NOT_STARTED
     // Note this might get semi-overridden as requestAnimationFrame has its own rate.
     const frameRate: number = 60
@@ -164,12 +157,17 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                     interpolated: gameStateDTO.gameState
                 }
             } else {
-                gs.previous = gs.server
-                gs.interpolated = gs.previous
+                gs.previous = deepCopy(gs.server)
+                gs.interpolated = deepCopy(gs.server)
                 gs.server = gameStateDTO.gameState
             }               
         }
     }))
+
+    // This is a hacky implementation to create a copy of a object instead of just copying the reference
+    function deepCopy<T>(obj: T): T {
+        return JSON.parse(JSON.stringify(obj));
+    }
 
     useEffect(() => {
         setupKeyboardInput()
@@ -286,15 +284,26 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         } else { console.error('WebSocket is not open. Message not sent.') }
     }
 
+    // Interpolate certain gameobjects between gs.previous and gs.server
     function interpolateGamestate(){
         if(iat.current == undefined) return
+        if(iat.timeline == undefined) return
+        if(iat.average == undefined) return
+        if(iat.lastMillis == undefined) return
+        if(gs === undefined) return
 
-        let millisPerFrame = 1000 / frameRate
-        let interpolationFramesCount: number = Math.floor(iat.current / millisPerFrame)
-
-        
-
-        //let prevGsDistanceTowardsServer = distance2D(prevServerGamestate.)
+        // Todo: map objects with an id so that they can be traced between gamestates. 
+        // This will prevent bug in case a object is added or deleted.
+        let previousObj: FireBall = gs.previous.fireBalls[0]
+        let serverObj: FireBall = gs.server.fireBalls[0]        
+        let millisSinceGsUpdate = Date.now() - iat.lastMillis
+        let interpolationFactor = millisSinceGsUpdate / iat.average
+        let distanceX = serverObj.x - previousObj.x
+        let distanceY = serverObj.y - previousObj.y
+        let xPosGain = distanceX * interpolationFactor
+        let yPosGain = distanceY * interpolationFactor
+        gs.interpolated.fireBalls[0].x = gs.previous.fireBalls[0].x + xPosGain
+        gs.interpolated.fireBalls[0].y = gs.previous.fireBalls[0].y + yPosGain
     }
 
     function predictGamestate(){
@@ -359,19 +368,19 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render fireBalls
-        gs.previous.fireBalls.forEach((ball) => {
-            ctx.fillStyle = "#00ffff"
-            drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
-        })
         if(gizmosEnabled){
             gs.server.fireBalls.forEach((ball) => {
                 ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
             })
-            gs.interpolated.fireBalls.forEach(ball => {
-                ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
+            gs.previous.fireBalls.forEach((ball) => {
+                ctx.fillStyle = "#00ffff"
+                drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
             })
         }
+        gs.interpolated.fireBalls.forEach(ball => {
+            ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
+        })
 
         // Render HUD
         let startY = 30
@@ -396,7 +405,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number){
         ctx.beginPath();
-        ctx.arc(x, y, fireBallDiameter/2, 0, Math.PI * 2);
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fill();   
     }
 
