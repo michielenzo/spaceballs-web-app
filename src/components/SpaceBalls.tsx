@@ -13,6 +13,7 @@ import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
+import { distance2D } from '../utility/math'
 
 // Component config
 interface SpaceBallsProps {
@@ -90,6 +91,13 @@ enum GameloopState{
     PAUSED
 }
 
+interface GameStates {
+    server: GameState
+    previous: GameState
+    interpolated: GameState
+    predicted: GameState
+}
+
 // Use forwardRef to allow refs to be forwarded to this component
 const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) => {
 
@@ -100,11 +108,15 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
 
-    const serverGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
-    const prevServerGamestate = useRef<SendSpaceBallsGameStateToClientsDTO>()
-    const predictedGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    // const serverGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    // const prevServerGamestate = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    // const predictedGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+    // const interpolatedGameState = useRef<SendSpaceBallsGameStateToClientsDTO>()
+
 
     let gameLoopState: GameloopState = GameloopState.NOT_STARTED
+    // Note this might get semi-overridden as requestAnimationFrame has its own rate.
+    const frameRate: number = 60
     
     const medKitImage = new Image()
     const inverterImage = new Image()
@@ -135,22 +147,27 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         timeline: new BoundedStack<number>(100)
     }
 
+    let gs: GameStates
+
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string, tempIat: InterArrivalTime) {
             iat = tempIat
-            if(serverGameState.current !== undefined){
-                prevServerGamestate.current = serverGameState.current
-            }
-            serverGameState.current = JSON.parse(newState)
 
-            if(prevServerGamestate.current === undefined) {
-                prevServerGamestate.current = serverGameState.current
-            }
-            if(predictedGameState.current == undefined){
-                predictedGameState.current = serverGameState.current
-            }
-            // Idea: throw away gamestate updat if it arrives after a later made request gamestate already arrived
+            let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
+            
+            if(gs === undefined){
+                gs = {
+                    server: gameStateDTO.gameState,
+                    previous: gameStateDTO.gameState,
+                    predicted: gameStateDTO.gameState,
+                    interpolated: gameStateDTO.gameState
+                }
+            } else {
+                gs.previous = gs.server
+                gs.interpolated = gs.previous
+                gs.server = gameStateDTO.gameState
+            }               
         }
     }))
 
@@ -173,7 +190,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
      */
     function gameLoop() {
         let lastFrameTime = Date.now()
-        let frameRate = 60 // Note this might get semi-overridden as requestAnimationFrame has its own rate.
         let millisPerFrame = 1000 / frameRate    
 
         const tick = () => {
@@ -198,6 +214,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if ("getContext" in canvasRef.current) {
                 const ctx = canvasRef.current.getContext('2d')
                 if(ctx){
+                    interpolateGamestate()
                     predictGamestate()
                     setupImages()
                     render(ctx, canvasRef.current)
@@ -269,32 +286,35 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         } else { console.error('WebSocket is not open. Message not sent.') }
     }
 
-    function predictGamestate(){
+    function interpolateGamestate(){
+        if(iat.current == undefined) return
+
+        let millisPerFrame = 1000 / frameRate
+        let interpolationFramesCount: number = Math.floor(iat.current / millisPerFrame)
+
         
-        // Do the thing
+
+        //let prevGsDistanceTowardsServer = distance2D(prevServerGamestate.)
+    }
+
+    function predictGamestate(){
+
     }
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
-        if(serverGameState.current === undefined) return
-        let gs: GameState = serverGameState.current.gameState 
-
-        if(prevServerGamestate.current === undefined) return
-        let prevGs: GameState = prevServerGamestate.current.gameState
-
-        if(predictedGameState.current === undefined) return
-        let predGs: GameState = predictedGameState.current.gameState
+        if(gs === undefined) return
 
         // Render Background
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Render homing balls
-        gs.homingBalls.forEach((homingBall) => {
+        gs.server.homingBalls.forEach((homingBall) => {
             ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, powerUpWidth+10, powerUpHeight+10)
         })
 
         // Render players
-        gs.players.forEach((player) => {
+        gs.server.players.forEach((player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
             ctx.fillText(player.name, player.x, player.y - 12)
@@ -318,7 +338,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render powerUps
-        gs.powerUps.forEach((powerUp) => {
+        gs.server.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
                     ctx.drawImage(inverterImage,
@@ -339,16 +359,16 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render fireBalls
-        prevGs.fireBalls.forEach((ball) => {
+        gs.previous.fireBalls.forEach((ball) => {
             ctx.fillStyle = "#00ffff"
             drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
         })
         if(gizmosEnabled){
-            gs.fireBalls.forEach((ball) => {
+            gs.server.fireBalls.forEach((ball) => {
                 ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
             })
-            predGs.fireBalls.forEach(ball => {
+            gs.interpolated.fireBalls.forEach(ball => {
                 ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
             })
         }
@@ -358,8 +378,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         let startX = 20
         let spacingX = 30
         let spacingY = 47
-        for (let playerIdx = 0; playerIdx < gs.players.length; playerIdx++) {
-            let player: Player = gs.players[playerIdx]
+        for (let playerIdx = 0; playerIdx < gs.server.players.length; playerIdx++) {
+            let player: Player = gs.server.players[playerIdx]
 
             ctx.fillStyle = '#ffffff'
             ctx.font = '15px Arial'
