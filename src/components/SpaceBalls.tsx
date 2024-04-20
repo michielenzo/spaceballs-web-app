@@ -340,7 +340,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         // Render fireBalls
         prevGs.fireBalls.forEach((ball) => {
-                ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
+            ctx.fillStyle = "#00ffff"
+            drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
         })
         if(gizmosEnabled){
             gs.fireBalls.forEach((ball) => {
@@ -348,8 +349,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
             })
             predGs.fireBalls.forEach(ball => {
-                ctx.fillStyle = "#00ffff"
-                drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
+                ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
             })
         }
 
