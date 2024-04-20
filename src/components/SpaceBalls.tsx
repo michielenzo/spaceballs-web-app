@@ -126,6 +126,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const playerHeight: number = 42
     const fireBallDiameter: number = 50
 
+    const gizmosEnabled: boolean = process.env.REACT_APP_GIZMOS !== undefined && process.env.REACT_APP_GIZMOS === "true"
+
     let iat: InterArrivalTime = {
         current: undefined,
         average: undefined,
@@ -279,6 +281,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         if(prevServerGamestate.current === undefined) return
         let prevGs: GameState = prevServerGamestate.current.gameState
 
+        if(predictedGameState.current === undefined) return
+        let predGs: GameState = predictedGameState.current.gameState
+
+        // Render Background
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
@@ -334,8 +340,18 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         // Render fireBalls
         prevGs.fireBalls.forEach((ball) => {
-            ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
+                ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
         })
+        if(gizmosEnabled){
+            gs.fireBalls.forEach((ball) => {
+                ctx.fillStyle = "#0000ff"
+                drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
+            })
+            predGs.fireBalls.forEach(ball => {
+                ctx.fillStyle = "#00ffff"
+                drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
+            })
+        }
 
         // Render HUD
         let startY = 30
@@ -356,6 +372,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         shieldAnimation.tick()
         controlsInvertedAnimation.tick()
+    }
+
+    function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number){
+        ctx.beginPath();
+        ctx.arc(x, y, fireBallDiameter/2, 0, Math.PI * 2);
+        ctx.fill();   
     }
 
     return (
