@@ -37,33 +37,26 @@ interface GameState {
     homingBalls: HomingBall[]
 }
 
-interface Player {
-    id: number
-    sessionId: string
-    name: string
-    x: number
-    y: number
-    health: number
-    shield: boolean
-    inverted: boolean
-}
-
-interface HomingBall {
+interface GameObject{
     id: number
     x: number,
     y: number
 }
 
-interface FireBall {
-    id: number
-    x: number
-    y: number
+interface Player extends GameObject{
+    sessionId: string
+    name: string
+    health: number
+    shield: boolean
+    inverted: boolean
 }
 
-interface PowerUp {
+interface HomingBall extends GameObject {}
+
+interface FireBall extends GameObject{}
+
+interface PowerUp extends GameObject {
     type: string
-    x: number
-    y: number
 }
 
 interface InputState {
@@ -289,14 +282,21 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     // Interpolate certain gameobjects between gs.previous and gs.server
     function interpolateGamestate(){
-        if(iat.current == undefined) return
-        if(iat.timeline == undefined) return
-        if(iat.average == undefined) return
-        if(iat.lastMillis == undefined) return
+        if(iat.average === undefined) return
+        if(iat.lastMillis === undefined) return
         if(gs === undefined) return
 
         let millisSinceGsUpdate = Date.now() - iat.lastMillis
         let interpolationFactor = millisSinceGsUpdate / iat.average
+
+        const interpolate = (serverObj: GameObject, previousObj: GameObject, interpolatedObj: GameObject) => {            
+            let distanceX = serverObj.x - previousObj.x
+            let distanceY = serverObj.y - previousObj.y
+            let xPosGain = distanceX * interpolationFactor
+            let yPosGain = distanceY * interpolationFactor
+            interpolatedObj.x = previousObj.x + xPosGain
+            interpolatedObj.y = previousObj.y + yPosGain
+        }
 
         gs.previous.fireBalls.forEach((previousObj) => {
             let serverObj: FireBall | undefined = gs.server.fireBalls.find(obj => obj.id === previousObj.id)
@@ -304,15 +304,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             
             if(serverObj === undefined) return
             if(interpolatedObj === undefined)  return
-            if(iat.average == undefined) return
-            if(iat.lastMillis == undefined) return
-            
-            let distanceX = serverObj.x - previousObj.x
-            let distanceY = serverObj.y - previousObj.y
-            let xPosGain = distanceX * interpolationFactor
-            let yPosGain = distanceY * interpolationFactor
-            interpolatedObj.x = previousObj.x + xPosGain
-            interpolatedObj.y = previousObj.y + yPosGain
+            interpolate(serverObj, previousObj, interpolatedObj)
         })
     }
 
