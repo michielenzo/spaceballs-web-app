@@ -295,18 +295,25 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         if(iat.lastMillis == undefined) return
         if(gs === undefined) return
 
-        // Todo: map objects with an id so that they can be traced between gamestates. 
-        // This will prevent bug in case a object is added or deleted.
-        let previousObj: FireBall = gs.previous.fireBalls[0]
-        let serverObj: FireBall = gs.server.fireBalls[0]        
         let millisSinceGsUpdate = Date.now() - iat.lastMillis
         let interpolationFactor = millisSinceGsUpdate / iat.average
-        let distanceX = serverObj.x - previousObj.x
-        let distanceY = serverObj.y - previousObj.y
-        let xPosGain = distanceX * interpolationFactor
-        let yPosGain = distanceY * interpolationFactor
-        gs.interpolated.fireBalls[0].x = gs.previous.fireBalls[0].x + xPosGain
-        gs.interpolated.fireBalls[0].y = gs.previous.fireBalls[0].y + yPosGain
+
+        gs.previous.fireBalls.forEach((previousObj) => {
+            let serverObj: FireBall | undefined = gs.server.fireBalls.find(obj => obj.id === previousObj.id)
+            let interpolatedObj: FireBall | undefined = gs.interpolated.fireBalls.find(obj => obj.id === previousObj.id)
+            
+            if(serverObj === undefined) return
+            if(interpolatedObj === undefined)  return
+            if(iat.average == undefined) return
+            if(iat.lastMillis == undefined) return
+            
+            let distanceX = serverObj.x - previousObj.x
+            let distanceY = serverObj.y - previousObj.y
+            let xPosGain = distanceX * interpolationFactor
+            let yPosGain = distanceY * interpolationFactor
+            interpolatedObj.x = previousObj.x + xPosGain
+            interpolatedObj.y = previousObj.y + yPosGain
+        })
     }
 
     function predictGamestate(){
