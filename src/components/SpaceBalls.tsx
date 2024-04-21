@@ -265,6 +265,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
             if (socketRef.current instanceof WebSocket) {
+                gameLoopState = GameloopState.PAUSED
                 socketRef.current.send(JSON.stringify(dto))
             }
         } else { console.error('WebSocket is not open. Message not sent.') }
