@@ -125,6 +125,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const powerUpHeight: number = 40
     const playerWidth: number = 60
     const playerHeight: number = 42
+    const homingBallRadius: number = 25
+    const homingBallImageWidth: number = 40
+    const homingBallImageHeight: number = 40
+
     const fireBallDiameter: number = 50
 
     const gizmosEnabled: boolean = process.env.REACT_APP_GIZMOS !== undefined && process.env.REACT_APP_GIZMOS === "true"
@@ -281,31 +285,36 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     // Interpolate certain gameobjects between gs.previous and gs.server
-    function interpolateGamestate(){
-        if(iat.average === undefined) return
-        if(iat.lastMillis === undefined) return
-        if(gs === undefined) return
+    function interpolateGamestate() {
+        if (!iat.average || !iat.lastMillis || !gs) return
 
-        let millisSinceGsUpdate = Date.now() - iat.lastMillis
-        let interpolationFactor = millisSinceGsUpdate / iat.average
+        const millisSinceGsUpdate = Date.now() - iat.lastMillis
+        const interpolationFactor = millisSinceGsUpdate / iat.average
 
-        const interpolate = (serverObj: GameObject, previousObj: GameObject, interpolatedObj: GameObject) => {            
-            let distanceX = serverObj.x - previousObj.x
-            let distanceY = serverObj.y - previousObj.y
-            let xPosGain = distanceX * interpolationFactor
-            let yPosGain = distanceY * interpolationFactor
-            interpolatedObj.x = previousObj.x + xPosGain
-            interpolatedObj.y = previousObj.y + yPosGain
+        function interpolateObjects<T extends GameObject>(
+            previousObjects: T[], 
+            serverObjects: T[], 
+            interpolatedObjects: T[]
+        ) {
+            const serverMap = new Map(serverObjects.map(obj => [obj.id, obj]))
+            const interpolatedMap = new Map(interpolatedObjects.map(obj => [obj.id, obj]))
+
+            previousObjects.forEach(previousObj => {
+                const serverObj = serverMap.get(previousObj.id)
+                const interpolatedObj = interpolatedMap.get(previousObj.id)
+                if (!serverObj || !interpolatedObj) return
+
+                const distanceX = serverObj.x - previousObj.x
+                const distanceY = serverObj.y - previousObj.y
+                interpolatedObj.x = previousObj.x + distanceX * interpolationFactor
+                interpolatedObj.y = previousObj.y + distanceY * interpolationFactor
+            })
         }
 
-        gs.previous.fireBalls.forEach((previousObj) => {
-            let serverObj: FireBall | undefined = gs.server.fireBalls.find(obj => obj.id === previousObj.id)
-            let interpolatedObj: FireBall | undefined = gs.interpolated.fireBalls.find(obj => obj.id === previousObj.id)
-            
-            if(serverObj === undefined) return
-            if(interpolatedObj === undefined)  return
-            interpolate(serverObj, previousObj, interpolatedObj)
-        })
+        // Interpolate all game objects
+        interpolateObjects(gs.previous.fireBalls, gs.server.fireBalls, gs.interpolated.fireBalls)
+        interpolateObjects(gs.previous.players, gs.server.players, gs.interpolated.players)
+        interpolateObjects(gs.previous.homingBalls, gs.server.homingBalls, gs.interpolated.homingBalls)
     }
 
     function predictGamestate(){
@@ -320,12 +329,32 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Render homing balls
-        gs.server.homingBalls.forEach((homingBall) => {
-            ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, powerUpWidth+10, powerUpHeight+10)
+        if(gizmosEnabled){
+            gs.server.homingBalls.forEach((homingBall) => {
+                ctx.fillStyle = "#0000ff"
+                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
+            })
+            gs.previous.homingBalls.forEach((homingBall) => {
+                ctx.fillStyle = "#00ffff"
+                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
+            })
+        }
+        gs.interpolated.homingBalls.forEach((homingBall) => {
+            ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, homingBallImageWidth+10, homingBallImageHeight+10)
         })
 
         // Render players
-        gs.server.players.forEach((player) => {
+        if(gizmosEnabled){
+            gs.server.players.forEach((player) => {
+                ctx.fillStyle = "#0000ff"
+                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+            })
+            gs.previous.players.forEach((player) => {
+                ctx.fillStyle = "#00ffff"
+                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+            })
+        }
+        gs.interpolated.players.forEach((player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
             ctx.fillText(player.name, player.x, player.y - 12)
