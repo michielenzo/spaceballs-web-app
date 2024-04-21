@@ -36,6 +36,7 @@ interface GameState {
 }
 
 interface Player {
+    id: number
     sessionId: string
     name: string
     x: number
@@ -46,11 +47,13 @@ interface Player {
 }
 
 interface HomingBall {
+    id: number
     x: number,
     y: number
 }
 
 interface FireBall {
+    id: number
     x: number
     y: number
 }
