@@ -13,6 +13,7 @@ import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
+import { GameState, GameObject, Player, HomingBall, FireBall, PowerUp } from "../interfaces/GameStateModels"
 
 // Component config
 interface SpaceBallsProps {
@@ -28,35 +29,6 @@ interface SpaceBallsMethods {
 interface SendSpaceBallsGameStateToClientsDTO {
     gameState: GameState
     messageType: string
-}
-
-interface GameState {
-    players: Player[]
-    fireBalls: FireBall[]
-    powerUps: PowerUp[]
-    homingBalls: HomingBall[]
-}
-
-interface GameObject{
-    id: number
-    x: number,
-    y: number
-}
-
-interface Player extends GameObject{
-    sessionId: string
-    name: string
-    health: number
-    shield: boolean
-    inverted: boolean
-}
-
-interface HomingBall extends GameObject {}
-
-interface FireBall extends GameObject{}
-
-interface PowerUp extends GameObject {
-    type: string
 }
 
 interface InputState {

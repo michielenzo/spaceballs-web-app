@@ -5,33 +5,8 @@ import SpaceBalls from "./components/SpaceBalls"
 import SpaceBallsMethods from "./components/SpaceBalls"
 import GameExplanationImage from './resources/images/game_explanation.png'
 import { BoundedStack } from './services/BoundedStack'
-
-interface Player {
-  id: string
-  name: string
-  status: string
-}
-
-interface LobbyState {
-  gameMode: string
-  players: Player[]
-}
-
-interface SendLobbyStateToClientsDTO {
-  lobbyState: LobbyState,
-  yourId: string,
-  messageType: string
-}
-
-interface ChooseNameToServerDTO {
-  playerId: string,
-  chosenName: string,
-  messageType: string
-}
-
-interface StartGameToServerDTO {
-  messageType: string
-}
+import { Player } from "./interfaces/LobbyModels"
+import { SendLobbyStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "./interfaces/DTO"
 
 interface SpaceBallsMethods {
   onGameStateChange: (newState: string, iat: InterArrivalTime) => void
