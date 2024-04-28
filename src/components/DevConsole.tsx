@@ -1,6 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react'
 
-function DevConsole() {
+interface DevConsoleProps {
+    commands?: { [key: string]: Function }
+}
+
+function DevConsole({ commands = {} }: DevConsoleProps) {
     const [logs, setLogs] = useState<string[]>([])
     const [command, setCommand] = useState('')
     const [isVisible, setIsVisible] = useState(false)
@@ -9,27 +13,48 @@ function DevConsole() {
 
     const log = (message: any) => {
         setLogs(prevLogs => [...prevLogs, message])
-    };
+    }
 
     const handleCommandChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setCommand(event.target.value)
-    };
+    }
+
+    const internalCommands = {
+        gizmos: (param1: string) => `Gizmos activated with parameter: ${param1}`,
+        moreGizmos: (param1: string, param2: string) => `More Gizmos with ${param1} and ${param2}`,
+    }
+
+    const allCommands: { [key: string]: Function } = { 
+        ...internalCommands, ...commands 
+    }
+
+    const gizmos = (param1: string) => `Gizmos activated with parameter: ${param1}`
+    const moreGizmos = (param1: string, param2: string) => `More Gizmos with ${param1} and ${param2}`
 
     const executeCommand = () => {
-        try {
-            const result = eval(command)
-            log(`${command} = ${result}`)
-        } catch (error) {
-            log(`Error: ${error}`)
+        const tokens = command.split(' ')
+        const functionName = tokens[0]
+        const args = tokens.slice(1)
+
+        if (allCommands[functionName]) {
+            try {
+                const result = allCommands[functionName](...args)
+                log(`${command} := ${result}`)
+            } catch (error) {
+                log(`Error executing command: ${functionName}: ${error}`)
+            }
+        } else {
+            log(`No such command: ${functionName}`)
         }
-        setCommand('');
-    };
+
+        setCommand('')
+    }
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
             executeCommand()
         }
-    };
+    }
 
     useEffect(() => {
         const toggleVisibility = (event: KeyboardEvent) => {
@@ -37,13 +62,13 @@ function DevConsole() {
                 event.preventDefault()
                 setIsVisible(prevIsVisible => !prevIsVisible)
             }
-        };
+        }
 
-        window.addEventListener('keydown', toggleVisibility);
+        window.addEventListener('keydown', toggleVisibility)
         return () => {
             window.removeEventListener('keydown', toggleVisibility)
-        };
-    }, []);
+        }
+    }, [])
 
     useEffect(() => {
         if (isVisible && inputRef.current) {
@@ -79,7 +104,8 @@ function DevConsole() {
                 overflowY: 'auto',
                 marginBottom: '5px',
                 padding: '3px 0',
-                border: '1px solid lime'
+                border: '1px solid lime',
+                background: '#111111'
             }}>
                 {logs.map((log, index) => (
                     <div key={index} style={{ wordWrap: 'break-word', textAlign: 'left', marginLeft: '3px', marginRight: '3px'}}>{log}</div>

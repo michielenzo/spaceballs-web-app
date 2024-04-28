@@ -177,6 +177,10 @@ function App() {
     }
   }
 
+  const extraCommands = {
+    app: (msg: string): string => `Invoked app with: ${msg}`,
+  }
+
   return (
       <div className="App">
         {gameStarted ? (
@@ -225,7 +229,7 @@ function App() {
               </div>
             </div>
         )}
-        <DevConsole/>
+        <DevConsole commands={extraCommands}/>
       </div>
   )
 }
