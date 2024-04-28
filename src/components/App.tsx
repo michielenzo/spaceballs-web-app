@@ -7,6 +7,7 @@ import GameExplanationImage from '../resources/images/game_explanation.png'
 import { BoundedStack } from '../services/BoundedStack'
 import { Player } from "../interfaces/LobbyModels"
 import { SendLobbyStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "../interfaces/DTO"
+import DevConsole from './DevConsole'
 
 interface SpaceBallsMethods {
   onGameStateChange: (newState: string, iat: InterArrivalTime) => void
@@ -224,6 +225,7 @@ function App() {
               </div>
             </div>
         )}
+        <DevConsole/>
       </div>
   )
 }
