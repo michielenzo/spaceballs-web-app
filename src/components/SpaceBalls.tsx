@@ -408,9 +408,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number){
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();   
+        ctx.beginPath()
+        ctx.arc(x, y, radius, 0, Math.PI * 2)
+        ctx.fill()  
     }
 
     return (

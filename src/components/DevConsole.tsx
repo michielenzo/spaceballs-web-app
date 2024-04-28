@@ -1,54 +1,35 @@
 import React, { useState, useEffect, useRef } from 'react'
+import { commandRegistry } from '../services/CommandRegistry'
 
-interface DevConsoleProps {
-    commands?: { [key: string]: Function }
-}
-
-function DevConsole({ commands = {} }: DevConsoleProps) {
+const DevConsole: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([])
     const [command, setCommand] = useState('')
     const [isVisible, setIsVisible] = useState(false)
     const logsEndRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
-    const log = (message: any) => {
+    const log = (message: string) => {
         setLogs(prevLogs => [...prevLogs, message])
-    }
+    };
 
     const handleCommandChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setCommand(event.target.value)
-    }
-
-    const internalCommands = {
-        gizmos: (param1: string) => `Gizmos activated with parameter: ${param1}`,
-        moreGizmos: (param1: string, param2: string) => `More Gizmos with ${param1} and ${param2}`,
-    }
-
-    const allCommands: { [key: string]: Function } = { 
-        ...internalCommands, ...commands 
-    }
-
-    const gizmos = (param1: string) => `Gizmos activated with parameter: ${param1}`
-    const moreGizmos = (param1: string, param2: string) => `More Gizmos with ${param1} and ${param2}`
+        setCommand(event.target.value);
+    };
 
     const executeCommand = () => {
         const tokens = command.split(' ')
         const functionName = tokens[0]
         const args = tokens.slice(1)
 
-        if (allCommands[functionName]) {
-            try {
-                const result = allCommands[functionName](...args)
-                log(`${command} := ${result}`)
-            } catch (error) {
-                log(`Error executing command: ${functionName}: ${error}`)
-            }
-        } else {
-            log(`No such command: ${functionName}`)
+        try {
+            const result = commandRegistry.executeCommand(functionName, ...args)
+            log(`${command} := ${result}`)
+        } catch (error) {
+            log(`${error}`)
         }
 
-        setCommand('')
-    }
+        setCommand('');
+    };
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
@@ -64,15 +45,13 @@ function DevConsole({ commands = {} }: DevConsoleProps) {
             }
         }
 
-        window.addEventListener('keydown', toggleVisibility)
-        return () => {
-            window.removeEventListener('keydown', toggleVisibility)
-        }
+        window.addEventListener('keydown', toggleVisibility);
+        return () => window.removeEventListener('keydown', toggleVisibility)
     }, [])
 
     useEffect(() => {
         if (isVisible && inputRef.current) {
-            inputRef.current.focus() // Automatically focus the input field.
+            inputRef.current.focus()
         }
     }, [isVisible])
 
