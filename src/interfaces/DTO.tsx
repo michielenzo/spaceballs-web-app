@@ -17,7 +17,7 @@ export interface StartGameToServerDTO {
   messageType: string
 }
 
-interface SendInputStateToServerDTO {
+export interface SendInputStateToServerDTO {
   wKey: boolean
   aKey: boolean
   sKey: boolean
@@ -26,12 +26,12 @@ interface SendInputStateToServerDTO {
   sessionId: string
 }
 
-interface BackToLobbyToServerDTO {
+export interface BackToLobbyToServerDTO {
   playerId: string
   messageType: "backToLobbyToServer"
 }
 
-interface SendSpaceBallsGameStateToClientsDTO {
+export interface SendSpaceBallsGameStateToClientsDTO {
   gameState: GameState
   messageType: string
 }
