@@ -1,4 +1,5 @@
 import { LobbyState } from "./LobbyModels"
+import { GameState } from "./GameStateModels"
 
 export interface SendLobbyStateToClientsDTO {
   lobbyState: LobbyState,
@@ -13,5 +14,24 @@ export interface ChooseNameToServerDTO {
 }
 
 export interface StartGameToServerDTO {
+  messageType: string
+}
+
+interface SendInputStateToServerDTO {
+  wKey: boolean
+  aKey: boolean
+  sKey: boolean
+  dKey: boolean
+  messageType: "sendInputStateToServer"
+  sessionId: string
+}
+
+interface BackToLobbyToServerDTO {
+  playerId: string
+  messageType: "backToLobbyToServer"
+}
+
+interface SendSpaceBallsGameStateToClientsDTO {
+  gameState: GameState
   messageType: string
 }

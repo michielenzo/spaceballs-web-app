@@ -15,6 +15,9 @@ import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sp
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
 import { GameState, GameObject, Player, HomingBall, FireBall, PowerUp } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
+import { SendInputStateToServerDTO } from '../interfaces/DTO'
+import { BackToLobbyToServerDTO } from '../interfaces/DTO'
+import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 
 // Component config
 interface SpaceBallsProps {
@@ -26,31 +29,11 @@ interface SpaceBallsMethods {
     onGameStateChange: (newState: string, iat: InterArrivalTime) => void
 }
 
-// GameState
-interface SendSpaceBallsGameStateToClientsDTO {
-    gameState: GameState
-    messageType: string
-}
-
 interface InputState {
     wKey: boolean
     aKey: boolean
     sKey: boolean
     dKey: boolean
-}
-
-interface SendInputStateToServerDTO {
-    wKey: boolean
-    aKey: boolean
-    sKey: boolean
-    dKey: boolean
-    messageType: "sendInputStateToServer"
-    sessionId: string
-}
-
-interface BackToLobbyToServerDTO {
-    playerId: string
-    messageType: "backToLobbyToServer"
 }
 
 enum GameloopState{
