@@ -23,9 +23,9 @@ class CommandRegistry {
   public executeCommand(name: string, ...args: any[]): any {
     const command = this.commands[name]
     if (command) {
-      return command(...args);
+      return command(...args)
     } else {
-      throw new Error(`Command '${name}' not found`)
+      throw new Error(`Command '${name}' not found in this context.`)
     }
   }
 

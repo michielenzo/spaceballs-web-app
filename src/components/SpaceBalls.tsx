@@ -14,6 +14,7 @@ import HomingBallImage from '../resources/images/homing_ball.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
 import { GameState, GameObject, Player, HomingBall, FireBall, PowerUp } from "../interfaces/GameStateModels"
+import { commandRegistry } from '../services/CommandRegistry'
 
 // Component config
 interface SpaceBallsProps {
@@ -103,7 +104,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     const fireBallDiameter: number = 50
 
-    const gizmosEnabled: boolean = process.env.REACT_APP_GIZMOS !== undefined && process.env.REACT_APP_GIZMOS === "true"
+    let gizmosEnabled: boolean = false
+    let interpolationEnabled: boolean = true
 
     let iat: InterArrivalTime = {
         current: undefined,
@@ -142,6 +144,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     useEffect(() => {
+        setupDevConsoleCommands()
         setupKeyboardInput()
         setupImages()
         shieldAnimation.setTickRate(5)
@@ -184,13 +187,29 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if ("getContext" in canvasRef.current) {
                 const ctx = canvasRef.current.getContext('2d')
                 if(ctx){
-                    interpolateGamestate()
+                    if (interpolationEnabled) interpolateGamestate()
                     predictGamestate()
                     setupImages()
                     render(ctx, canvasRef.current)
                 }
             }
         }
+    }
+
+    function setupDevConsoleCommands(){
+        // Command to toggle gizmo rendering.
+        commandRegistry.registerCommand('gizmos', (arg1: string) => { 
+            if(arg1 === "on") { gizmosEnabled = true; return }
+            if(arg1 === "off") { gizmosEnabled = false; return }
+            throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")
+        })
+
+        // Command to toggle Gamestate interpolation.
+        commandRegistry.registerCommand('csi', (arg1: string) => {
+            if(arg1 === "on") { interpolationEnabled = true; return }
+            if(arg1 === "off") { interpolationEnabled = false; return }
+            throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
+        })
     }
     
     function setupImages(){
@@ -296,13 +315,15 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         if(gs === undefined) return
+        let renderGs = interpolationEnabled ? gs.interpolated : gs.server
+        console.log(interpolationEnabled)
 
         // Render Background
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Render homing balls
-        if(gizmosEnabled){
+        if(gizmosEnabled && interpolationEnabled){
             gs.server.homingBalls.forEach((homingBall) => {
                 ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
@@ -312,12 +333,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
             })
         }
-        gs.interpolated.homingBalls.forEach((homingBall) => {
+        renderGs.homingBalls.forEach((homingBall) => {
             ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, homingBallImageWidth+10, homingBallImageHeight+10)
         })
 
         // Render players
-        if(gizmosEnabled){
+        if(gizmosEnabled && interpolationEnabled){
             gs.server.players.forEach((player) => {
                 ctx.fillStyle = "#0000ff"
                 ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
@@ -327,7 +348,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
             })
         }
-        gs.interpolated.players.forEach((player) => {
+        renderGs.players.forEach((player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
             ctx.fillText(player.name, player.x, player.y - 12)
@@ -351,7 +372,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render powerUps
-        gs.server.powerUps.forEach((powerUp) => {
+        renderGs.powerUps.forEach((powerUp) => {
             switch (powerUp.type) {
                 case "inverter":
                     ctx.drawImage(inverterImage,
@@ -372,7 +393,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
 
         // Render fireBalls
-        if(gizmosEnabled){
+        if(gizmosEnabled && interpolationEnabled){
             gs.server.fireBalls.forEach((ball) => {
                 ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
@@ -382,7 +403,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
             })
         }
-        gs.interpolated.fireBalls.forEach(ball => {
+        renderGs.fireBalls.forEach(ball => {
             ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
         })
 
@@ -391,7 +412,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         let startX = 20
         let spacingX = 30
         let spacingY = 47
-        for (let playerIdx = 0; playerIdx < gs.server.players.length; playerIdx++) {
+        for (let playerIdx = 0; playerIdx < renderGs.players.length; playerIdx++) {
             let player: Player = gs.server.players[playerIdx]
 
             ctx.fillStyle = '#ffffff'

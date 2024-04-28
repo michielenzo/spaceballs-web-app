@@ -10,11 +10,11 @@ const DevConsole: React.FC = () => {
 
     const log = (message: string) => {
         setLogs(prevLogs => [...prevLogs, message])
-    };
+    }
 
     const handleCommandChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setCommand(event.target.value);
-    };
+        setCommand(event.target.value)
+    }
 
     const executeCommand = () => {
         const tokens = command.split(' ')
@@ -23,13 +23,14 @@ const DevConsole: React.FC = () => {
 
         try {
             const result = commandRegistry.executeCommand(functionName, ...args)
-            log(`${command} := ${result}`)
+            let text = result === undefined ? "success" : "success: " + result  
+            log(`${command} := ${text}`)
         } catch (error) {
             log(`${error}`)
         }
 
-        setCommand('');
-    };
+        setCommand('')
+    }
 
     const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
         if (event.key === 'Enter') {
@@ -45,7 +46,7 @@ const DevConsole: React.FC = () => {
             }
         }
 
-        window.addEventListener('keydown', toggleVisibility);
+        window.addEventListener('keydown', toggleVisibility)
         return () => window.removeEventListener('keydown', toggleVisibility)
     }, [])
 
