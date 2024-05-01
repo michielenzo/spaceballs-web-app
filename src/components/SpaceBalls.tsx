@@ -97,7 +97,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         timeline: new BoundedStack<number>(100)
     }
 
-    let gs: GameStates
+    const gameStateInit: GameState = { players: [], fireBalls: [], powerUps: [], homingBalls: [] }
+    const gameStatesInit: GameStates = {
+        server: gameStateInit, 
+        interpolated: gameStateInit, 
+        predicted: gameStateInit, 
+        previous: gameStateInit
+    }
+    const gs = useRef<GameStates>(gameStatesInit)
 
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
@@ -105,19 +112,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             iat = tempIat
 
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
-            
-            if(gs === undefined){
-                gs = {
-                    server: gameStateDTO.gameState,
-                    previous: gameStateDTO.gameState,
-                    predicted: gameStateDTO.gameState,
-                    interpolated: gameStateDTO.gameState
-                }
-            } else {
-                gs.previous = deepCopy(gs.server)
-                gs.interpolated = deepCopy(gs.server)
-                gs.server = gameStateDTO.gameState
-            }               
+
+            gs.current.previous = deepCopy(gs.current.server)
+            gs.current.interpolated = deepCopy(gs.current.server)
+            gs.current.server = gameStateDTO.gameState            
         }
     }))
 
@@ -287,9 +285,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         }
 
         // Interpolate all game objects
-        interpolateObjects(gs.previous.fireBalls, gs.server.fireBalls, gs.interpolated.fireBalls)
-        interpolateObjects(gs.previous.players, gs.server.players, gs.interpolated.players)
-        interpolateObjects(gs.previous.homingBalls, gs.server.homingBalls, gs.interpolated.homingBalls)
+        interpolateObjects(gs.current.previous.fireBalls, gs.current.server.fireBalls, gs.current.interpolated.fireBalls)
+        interpolateObjects(gs.current.previous.players, gs.current.server.players, gs.current.interpolated.players)
+        interpolateObjects(gs.current.previous.homingBalls, gs.current.server.homingBalls, gs.current.interpolated.homingBalls)
     }
 
     function predictGamestate(){
@@ -298,8 +296,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         if(gs === undefined) return
-        let renderGs = interpolationEnabled ? gs.interpolated : gs.server
-        console.log(interpolationEnabled)
+        let renderGs = interpolationEnabled ? gs.current.interpolated : gs.current.server
 
         // Render Background
         ctx.fillStyle = '#000000'
@@ -307,11 +304,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         // Render homing balls
         if(gizmosEnabled && interpolationEnabled){
-            gs.server.homingBalls.forEach((homingBall) => {
+            gs.current.server.homingBalls.forEach((homingBall) => {
                 ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
             })
-            gs.previous.homingBalls.forEach((homingBall) => {
+            gs.current.previous.homingBalls.forEach((homingBall) => {
                 ctx.fillStyle = "#00ffff"
                 drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
             })
@@ -322,11 +319,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         // Render players
         if(gizmosEnabled && interpolationEnabled){
-            gs.server.players.forEach((player) => {
+            gs.current.server.players.forEach((player) => {
                 ctx.fillStyle = "#0000ff"
                 ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
             })
-            gs.previous.players.forEach((player) => {
+            gs.current.previous.players.forEach((player) => {
                 ctx.fillStyle = "#00ffff"
                 ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
             })
@@ -377,11 +374,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         // Render fireBalls
         if(gizmosEnabled && interpolationEnabled){
-            gs.server.fireBalls.forEach((ball) => {
+            gs.current.server.fireBalls.forEach((ball) => {
                 ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
             })
-            gs.previous.fireBalls.forEach((ball) => {
+            gs.current.previous.fireBalls.forEach((ball) => {
                 ctx.fillStyle = "#00ffff"
                 drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
             })
@@ -396,7 +393,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         let spacingX = 30
         let spacingY = 47
         for (let playerIdx = 0; playerIdx < renderGs.players.length; playerIdx++) {
-            let player: Player = gs.server.players[playerIdx]
+            let player: Player = gs.current.server.players[playerIdx]
 
             ctx.fillStyle = '#ffffff'
             ctx.font = '15px Arial'

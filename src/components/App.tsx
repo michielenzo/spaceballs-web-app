@@ -100,7 +100,7 @@ function App() {
                 }
 
                 break
-              case "backToLobbyToServer":
+              case "backToLobbyToClient":
                 setGameStarted(false)
                 break
               case "heartbeatAcknowledge":
