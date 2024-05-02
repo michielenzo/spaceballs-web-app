@@ -106,12 +106,16 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
     const gs = useRef<GameStates>(gameStatesInit)
 
+    const highestTickNumber = useRef<number>(0)
+
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string, tempIat: InterArrivalTime) {
             iat = tempIat
 
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
+
+            if(gamestateIsExpired(gameStateDTO)) return 
 
             gs.current.previous = deepCopy(gs.current.server)
             gs.current.interpolated = deepCopy(gs.current.server)
@@ -122,6 +126,21 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     // This is a hacky implementation to create a copy of a object instead of just copying the reference
     function deepCopy<T>(obj: T): T {
         return JSON.parse(JSON.stringify(obj));
+    }
+
+    function gamestateIsExpired(dto: SendSpaceBallsGameStateToClientsDTO): boolean {
+        console.log(dto.tickNumber)
+        if(dto.tickNumber < highestTickNumber.current){
+            console.log("Gamestate discarded.")
+            return true
+        } else if(dto.tickNumber == highestTickNumber.current) {
+            console.log("Gamestate discarded.")
+            console.warn("Multiple gamestates with the same tickNumber recieved.")
+            return true
+        } else {
+            highestTickNumber.current = dto.tickNumber
+            return false
+        }
     }
 
     useEffect(() => {

@@ -33,5 +33,6 @@ export interface BackToLobbyToServerDTO {
 
 export interface SendSpaceBallsGameStateToClientsDTO {
   gameState: GameState
+  tickNumber: number
   messageType: string
 }
