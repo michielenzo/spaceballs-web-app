@@ -115,7 +115,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
 
-            if(gamestateIsExpired(gameStateDTO)) return 
+            if(gamestateIsExpired(gameStateDTO)) return // this might not be necessary because websocket should ensures the sequence.
 
             gs.current.previous = deepCopy(gs.current.server)
             gs.current.interpolated = deepCopy(gs.current.server)
