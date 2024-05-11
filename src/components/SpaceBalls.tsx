@@ -62,6 +62,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     let gameLoopState: GameloopState = GameloopState.NOT_STARTED
     // Note this might get semi-overridden as requestAnimationFrame has its own rate.
     const frameRate: number = 60
+    const fps = useRef<number>(frameRate)
+    const fpsHistory = useRef<BoundedStack<number>>(new BoundedStack<number>(60))
+    const fpsRenderingEnabled = useRef<boolean>(false) 
     
     const medKitImage = new Image()
     const inverterImage = new Image()
@@ -146,6 +149,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         let lastFrameTime = Date.now()
         let millisPerFrame = 1000 / frameRate    
 
+        let framesInSecond = 0
+        let lastSecondTime = Date.now()
+
         const tick = () => {
             const now = Date.now()
             const deltaTime = now - lastFrameTime
@@ -153,6 +159,16 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if (deltaTime >= millisPerFrame) {
                 tickFrame()
                 lastFrameTime = now - (deltaTime % millisPerFrame)
+                framesInSecond++
+            }
+
+            // Calculate FPS
+            const deltaTimeSinceLastSecond = now - lastSecondTime
+            if(deltaTimeSinceLastSecond >= 1000){
+                fpsHistory.current.push(fps.current)
+                fps.current = framesInSecond
+                framesInSecond = 0
+                lastSecondTime += 1000
             }
     
             if (gameLoopState === GameloopState.RUNNING) {
@@ -189,6 +205,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         commandRegistry.registerCommand('csi', (arg1: string) => {
             if(arg1 === "on") { interpolationEnabled = true; return }
             if(arg1 === "off") { interpolationEnabled = false; return }
+            throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
+        })
+
+        // Command to toggle FPS rendering.
+        commandRegistry.registerCommand('fps', (arg1: string) => {
+            if(arg1 === "on") { fpsRenderingEnabled.current = true; return }
+            if(arg1 === "off") { fpsRenderingEnabled.current = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
         })
     }
@@ -402,6 +425,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             for (let j = 1; j < player.health + 1; j++) {
                 ctx.drawImage(heartImage, startX + spacingX * (j - 1), startY + 8 + spacingY * playerIdx, 20, 20)
             }
+        }
+
+        // Render FPS 
+        if(fpsRenderingEnabled.current){
+            ctx.fillStyle = '#ffffff'
+            ctx.font = '15px Arial'
+            ctx.fillText("FPS: " + fps.current, 1025, 28)
         }
 
         shieldAnimation.tick()
