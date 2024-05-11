@@ -114,7 +114,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
 
             gs.current.previous = deepCopy(gs.current.server)
-            gs.current.interpolated = deepCopy(gs.current.server)
+            gs.current.interpolated = deepCopy(gs.current.previous)
             gs.current.server = gameStateDTO.gameState            
         }
     }))
@@ -273,6 +273,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             const interpolatedMap = new Map(interpolatedObjects.map(obj => [obj.id, obj]))
 
             previousObjects.forEach(previousObj => {
+                // Calculate correction factor
                 const serverObj = serverMap.get(previousObj.id)
                 const interpolatedObj = interpolatedMap.get(previousObj.id)
                 if (!serverObj || !interpolatedObj) return
@@ -288,6 +289,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         interpolateObjects(gs.current.previous.fireBalls, gs.current.server.fireBalls, gs.current.interpolated.fireBalls)
         interpolateObjects(gs.current.previous.players, gs.current.server.players, gs.current.interpolated.players)
         interpolateObjects(gs.current.previous.homingBalls, gs.current.server.homingBalls, gs.current.interpolated.homingBalls)
+    }
+
+    // Math / Pseudocode for better Client side interpolation. 
+    // interpolationFrameTranslation X,Y = Dist(gs.I -> gs.S) / AvgInterpolationFrames
+    // AvgInterpolationFrames = iat.average / AvgInterpolationFrameDuration
+    // AvgInterpolationFrameDuration = 1000 / FPS 
+    function interpolateGameStateNonSnappingOnCorrection() {
+
     }
 
     function predictGamestate(){

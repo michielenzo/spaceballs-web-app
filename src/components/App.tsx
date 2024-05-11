@@ -46,7 +46,7 @@ function App() {
     current: undefined,
     average: undefined,
     lastMillis: undefined,
-    timeline: new BoundedStack<number>(100)
+    timeline: new BoundedStack<number>(500)
   }
 
   useEffect(() => {
