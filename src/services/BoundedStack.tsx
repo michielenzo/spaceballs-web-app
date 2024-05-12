@@ -25,6 +25,13 @@ export class BoundedStack<T> {
         return undefined;
     }
 
+    public peekAt(idx: number): T | undefined {
+        if (this.stack.length > 0) {
+            return this.stack[this.stack.length - idx];
+        }
+        return undefined;
+    }
+
     public isEmpty(): boolean {
         return this.stack.length === 0;
     }
