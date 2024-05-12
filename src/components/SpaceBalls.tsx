@@ -18,6 +18,7 @@ import { commandRegistry } from '../services/CommandRegistry'
 import { SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToLobbyToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
+import { Vec2D } from '../utility/math'
 
 // Component config
 interface SpaceBallsProps {
@@ -107,7 +108,17 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         predicted: gameStateInit, 
         previous: gameStateInit
     }
+    const interpolatedGsSet = useRef<boolean>(false)
     const gs = useRef<GameStates>(gameStatesInit)
+
+    // IFT is a acronym for interpolationFrameTranslation (self invented), 
+    // which represents the translation for each object to interpolate should translate each interpolation frame. 
+    // This map maps each interpolation object with its translation vector.
+    const IFTMapping = useRef<Map<number, Vec2D>>(new Map<number, Vec2D>())
+
+    const CSI_Strategy_RawTranslation = "RawTranslation"
+    const CSI_Strategy_FactorTranslation = "FactorTranslation"
+    const interpolationStrategy = useRef<String>(CSI_Strategy_FactorTranslation)
 
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
@@ -117,14 +128,67 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
 
             gs.current.previous = deepCopy(gs.current.server)
-            gs.current.interpolated = deepCopy(gs.current.previous)
-            gs.current.server = gameStateDTO.gameState            
+            if(interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
+                gs.current.interpolated = deepCopy(gs.current.previous)
+            }
+            gs.current.server = gameStateDTO.gameState   
+            
+            if(interpolationStrategy.current === CSI_Strategy_RawTranslation) {
+                prepareInterpolation()
+            }
         }
     }))
 
     // This is a hacky implementation to create a copy of a object instead of just copying the reference
     function deepCopy<T>(obj: T): T {
         return JSON.parse(JSON.stringify(obj));
+    }
+
+    // Math / Pseudocode for better Client side interpolation. 
+    // interpolationFrameTranslation X,Y = Dist(gs.I -> gs.S) / AvgInterpolationFrames
+    // AvgInterpolationFrames = iat.average / AvgInterpolationFrameDuration
+    // AvgInterpolationFrameDuration = 1000 / FPS 
+    function prepareInterpolation(){
+        let newGSWithoutPositionUpdates = deepCopy(gs.current.server)
+        const newGSObjs: GameObject[] = [
+            ...newGSWithoutPositionUpdates.fireBalls, 
+            ...newGSWithoutPositionUpdates.homingBalls, 
+            ...newGSWithoutPositionUpdates.players
+        ]
+        const newGSObjsMap = new Map(newGSObjs.map(obj => [obj.id, obj]))
+
+        if (!iat.average || !iat.lastMillis || !gs) return
+
+        let avgInterpolationFrameDuration: number = 1000 / fps.current
+        let avgInterpolationFrames: number = iat.average / avgInterpolationFrameDuration
+
+        function calculateIFT<T extends GameObject>(interpolatedObjects: T[], serverObjects: T[]){
+            const serverMap = new Map(serverObjects.map(obj => [obj.id, obj]))
+
+            interpolatedObjects.forEach(interpolatedObj => {
+                // Keep the old positions 
+                const newGSMatch = newGSObjsMap.get(interpolatedObj.id)
+                if(!newGSMatch) return
+                newGSMatch.x = interpolatedObj.x
+                newGSMatch.y = interpolatedObj.y
+                
+                const serverObjMatch = serverMap.get(interpolatedObj.id)
+                if(!serverObjMatch) return
+
+                const distX = serverObjMatch.x - interpolatedObj.x
+                const distY = serverObjMatch.y - interpolatedObj.y
+                const translationX = distX / avgInterpolationFrames
+                const translationY = distY / avgInterpolationFrames
+
+                IFTMapping.current.set(interpolatedObj.id, { x: translationX, y: translationY })
+            })
+        }
+
+        calculateIFT(gs.current.interpolated.fireBalls, gs.current.server.fireBalls)
+        calculateIFT(gs.current.interpolated.homingBalls, gs.current.server.homingBalls)
+        calculateIFT(gs.current.interpolated.players, gs.current.server.players)
+
+        gs.current.interpolated = newGSWithoutPositionUpdates
     }
 
     useEffect(() => {
@@ -184,7 +248,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if ("getContext" in canvasRef.current) {
                 const ctx = canvasRef.current.getContext('2d')
                 if(ctx){
-                    if (interpolationEnabled) interpolateGamestate()
+                    if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_RawTranslation) {
+                        interpolateGameState_RawTranslation()
+                    } else if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
+                        interpolateGamestate_FactorTranslation()    
+                    }
                     predictGamestate()
                     setupImages()
                     render(ctx, canvasRef.current)
@@ -206,6 +274,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             if(arg1 === "on") { interpolationEnabled = true; return }
             if(arg1 === "off") { interpolationEnabled = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
+        })
+
+        // Command to switch between CSI strategies
+        commandRegistry.registerCommand('csi-strategy', (arg1: string) => {
+            if(arg1 === "factor") { interpolationStrategy.current = CSI_Strategy_FactorTranslation; return }
+            if(arg1 === "raw") { interpolationStrategy.current = CSI_Strategy_RawTranslation; return }
+            throw new Error(arg1 + " is not a valid parameter. Use 'factor' or 'raw'")           
         })
 
         // Command to toggle FPS rendering.
@@ -281,9 +356,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     // Interpolate certain gameobjects between gs.previous and gs.server
-    function interpolateGamestate() {
+    function interpolateGamestate_FactorTranslation() {
         if (!iat.average || !iat.lastMillis || !gs) return
-
         const millisSinceGsUpdate = Date.now() - iat.lastMillis
         const interpolationFactor = millisSinceGsUpdate / iat.average
 
@@ -296,7 +370,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             const interpolatedMap = new Map(interpolatedObjects.map(obj => [obj.id, obj]))
 
             previousObjects.forEach(previousObj => {
-                // Calculate correction factor
                 const serverObj = serverMap.get(previousObj.id)
                 const interpolatedObj = interpolatedMap.get(previousObj.id)
                 if (!serverObj || !interpolatedObj) return
@@ -314,12 +387,23 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         interpolateObjects(gs.current.previous.homingBalls, gs.current.server.homingBalls, gs.current.interpolated.homingBalls)
     }
 
-    // Math / Pseudocode for better Client side interpolation. 
-    // interpolationFrameTranslation X,Y = Dist(gs.I -> gs.S) / AvgInterpolationFrames
-    // AvgInterpolationFrames = iat.average / AvgInterpolationFrameDuration
-    // AvgInterpolationFrameDuration = 1000 / FPS 
-    function interpolateGameStateNonSnappingOnCorrection() {
+    function interpolateGameState_RawTranslation() {
+        const interpolatedObjects: GameObject[] = [
+            ...gs.current.interpolated.fireBalls, 
+            ...gs.current.interpolated.homingBalls, 
+            ...gs.current.interpolated.players
+        ]
 
+        interpolatedObjects.forEach(obj => {
+            let IFTMatch: Vec2D | undefined = IFTMapping.current.get(obj.id)
+
+            if(!IFTMatch) {
+                return
+            }
+
+            obj.x += IFTMatch.x
+            obj.y += IFTMatch.y
+        })
     }
 
     function predictGamestate(){
