@@ -134,7 +134,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             gs.current.server = gameStateDTO.gameState   
             
             if(interpolationStrategy.current === CSI_Strategy_RawTranslation) {
-                prepareInterpolation()
+                prepareInterpolation_RawTranslation()
             }
         }
     }))
@@ -144,11 +144,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         return JSON.parse(JSON.stringify(obj));
     }
 
-    // Math / Pseudocode for better Client side interpolation. 
+    // Math / Pseudocode for better CSI with RawTranslation strategy.
     // interpolationFrameTranslation X,Y = Dist(gs.I -> gs.S) / AvgInterpolationFrames
     // AvgInterpolationFrames = iat.average / AvgInterpolationFrameDuration
     // AvgInterpolationFrameDuration = 1000 / FPS 
-    function prepareInterpolation(){
+    function prepareInterpolation_RawTranslation(){
         let newGSWithoutPositionUpdates = deepCopy(gs.current.server)
         const newGSObjs: GameObject[] = [
             ...newGSWithoutPositionUpdates.fireBalls, 
