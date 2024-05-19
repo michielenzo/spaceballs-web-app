@@ -56,6 +56,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const { socketRef, yourId } = props
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
+    const canvasWidth: number = 1100
+    const canvasHeight: number = 650
 
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
@@ -63,9 +65,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     let gameLoopState: GameloopState = GameloopState.NOT_STARTED
     // Note this might get semi-overridden as requestAnimationFrame has its own rate.
     const frameRate: number = 60
+    
     const fps = useRef<number>(frameRate)
     const fpsHistory = useRef<BoundedStack<number>>(new BoundedStack<number>(60))
     const fpsRenderingEnabled = useRef<boolean>(false) 
+
+    const millisPerSecond = 1000
+    // Multiply movement translation with this factor to make the speed fps independent.
+    const speedFactor = useRef<number>((millisPerSecond / frameRate) / millisPerSecond)
     
     const medKitImage = new Image()
     const inverterImage = new Image()
@@ -141,12 +148,34 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 prepareInterpolation_RawTranslation()
             }
 
-            if(predictedGsSet.current === false){
-                gs.current.predicted = deepCopy(gs.current.server)
-                predictedGsSet.current = true
-            }
+            if(playerPredictionEnabled) prepareCSP()
         }
     }))
+
+    function prepareCSP(){
+        if(predictedGsSet.current === false){
+            gs.current.predicted = deepCopy(gs.current.server)
+            predictedGsSet.current = true
+        }
+
+        const yourServerPlayer: Player | undefined = gs.current.server.players.find(p => p.sessionId === yourId)
+        const yourPredictedPlayer: Player | undefined = gs.current.predicted.players.find(p => p.sessionId === yourId)
+
+        if (yourServerPlayer && yourPredictedPlayer) {
+            yourPredictedPlayer.health = yourServerPlayer.health
+            yourPredictedPlayer.inverted = yourServerPlayer.inverted
+            yourPredictedPlayer.shield = yourServerPlayer.shield
+
+            // Calculate discrepancy
+            const discrepancyX = yourPredictedPlayer.x - yourServerPlayer.x
+            const discrepancyY = yourPredictedPlayer.y - yourServerPlayer.y
+
+            // Apply correction
+            const correctionFactor = 0.05
+            yourPredictedPlayer.x -= discrepancyX * correctionFactor
+            yourPredictedPlayer.y -= discrepancyY * correctionFactor
+        }
+    }
 
     // This is a hacky implementation to create a copy of a object instead of just copying the reference
     function deepCopy<T>(obj: T): T {
@@ -168,7 +197,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         if (!iat.average || !iat.lastMillis || !gs) return
 
-        let avgInterpolationFrameDuration: number = 1000 / fps.current
+        let avgInterpolationFrameDuration: number = millisPerSecond / fps.current
         let avgInterpolationFrames: number = iat.average / avgInterpolationFrameDuration
 
         function calculateIFT<T extends GameObject>(interpolatedObjects: T[], serverObjects: T[]){
@@ -214,8 +243,30 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }, [])
 
     function predictGamestate(){
-        const translationX = 0
-        const translationY = 0
+        const playerSpeed = 165
+        let translationX = 0
+        let translationY = 0
+
+        const predictedPlayer = gs.current.predicted.players.filter(p => p.sessionId === yourId).at(0)
+        if(predictedPlayer && predictedPlayer.health > 0){
+            // Move player
+            let speed = playerSpeed * speedFactor.current
+            if(predictedPlayer.inverted) speed = -speed
+
+            if(inputState.current.wKey) translationY -= speed
+            if(inputState.current.aKey) translationX -= speed
+            if(inputState.current.sKey) translationY += speed
+            if(inputState.current.dKey) translationX += speed
+
+            predictedPlayer.x += translationX
+            predictedPlayer.y += translationY
+
+            // Wall collision
+            if(predictedPlayer.x < 0) predictedPlayer.x = 0
+            if(predictedPlayer.x > canvasWidth - playerWidth) predictedPlayer.x = canvasWidth - playerWidth
+            if(predictedPlayer.y < 0) predictedPlayer.y = 0
+            if(predictedPlayer.y > canvasHeight - playerHeight) predictedPlayer.y = canvasHeight - playerHeight
+        }
     }
 
     /*
@@ -225,7 +276,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
      */
     function gameLoop() {
         let lastFrameTime = Date.now()
-        let millisPerFrame = 1000 / frameRate    
+        let millisPerFrame = millisPerSecond / frameRate    
 
         let framesInSecond = 0
         let lastSecondTime = Date.now()
@@ -242,11 +293,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
             // Calculate FPS
             const deltaTimeSinceLastSecond = now - lastSecondTime
-            if(deltaTimeSinceLastSecond >= 1000){
+            if(deltaTimeSinceLastSecond >= millisPerSecond){
                 fpsHistory.current.push(fps.current)
                 fps.current = framesInSecond
                 framesInSecond = 0
-                lastSecondTime += 1000
+                lastSecondTime += millisPerSecond
+
+                speedFactor.current = (millisPerSecond / fps.current) / millisPerSecond
             }
     
             if (gameLoopState === GameloopState.RUNNING) {
@@ -267,7 +320,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                     } else if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
                         interpolateGamestate_FactorTranslation()    
                     }
-                    predictGamestate()
+                    if(playerPredictionEnabled) predictGamestate()
                     setupImages()
                     render(ctx, canvasRef.current)
                 }
@@ -576,7 +629,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     return (
         <div>
-            <canvas ref={canvasRef} width="1100" height="650"></canvas>
+            <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight}></canvas>
         </div>
     )
 })
