@@ -109,6 +109,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         previous: gameStateInit
     }
     const interpolatedGsSet = useRef<boolean>(false)
+    const predictedGsSet = useRef<boolean>(false)
     const gs = useRef<GameStates>(gameStatesInit)
 
     // IFT is a acronym for interpolationFrameTranslation (self invented), 
@@ -119,6 +120,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const CSI_Strategy_RawTranslation = "RawTranslation"
     const CSI_Strategy_FactorTranslation = "FactorTranslation"
     const interpolationStrategy = useRef<String>(CSI_Strategy_FactorTranslation)
+
+    // CSP
+    const playerPredictionEnabled = useRef<boolean>(true)
 
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
@@ -135,6 +139,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             
             if(interpolationStrategy.current === CSI_Strategy_RawTranslation) {
                 prepareInterpolation_RawTranslation()
+            }
+
+            if(predictedGsSet.current === false){
+                gs.current.predicted = deepCopy(gs.current.server)
+                predictedGsSet.current = true
             }
         }
     }))
@@ -203,6 +212,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             gameLoop()
         }
     }, [])
+
+    function predictGamestate(){
+        const translationX = 0
+        const translationY = 0
+    }
 
     /*
      *  This Gameloop implementation uses a recursive structure.
@@ -273,6 +287,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         commandRegistry.registerCommand('csi', (arg1: string) => {
             if(arg1 === "on") { interpolationEnabled = true; return }
             if(arg1 === "off") { interpolationEnabled = false; return }
+            throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
+        })
+
+        // Command to toggle Player CSP.
+        commandRegistry.registerCommand('csp', (arg1: string) => {
+            if(arg1 === "on") { playerPredictionEnabled.current = true; return }
+            if(arg1 === "off") { playerPredictionEnabled.current = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
         })
 
@@ -406,10 +427,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         })
     }
 
-    function predictGamestate(){
-
-    }
-
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         if(gs === undefined) return
         let renderGs = interpolationEnabled ? gs.current.interpolated : gs.current.server
@@ -433,7 +450,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             ctx.drawImage(homingBallImage, homingBall.x-5 , homingBall.y-5, homingBallImageWidth+10, homingBallImageHeight+10)
         })
 
-        // Render players
+        // Render player Gizmos
         if(gizmosEnabled && interpolationEnabled){
             gs.current.server.players.forEach((player) => {
                 ctx.fillStyle = "#0000ff"
@@ -444,28 +461,48 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
             })
         }
-        renderGs.players.forEach((player) => {
+
+        // Render players
+        const renderPlayer = (player: Player) => {
             ctx.fillStyle = '#ffffff'
             ctx.font = '17px Arial'
             ctx.fillText(player.name, player.x, player.y - 12)
-
-            if(player.health > 0){
+        
+            if (player.health > 0) {
                 ctx.fillStyle = '#8a2be2'
                 ctx.drawImage(saucerImage, player.x, player.y, playerWidth, playerHeight)
-                if(player.shield) {
+        
+                if (player.shield) {
                     let xOffset = 5
                     let yOffset = 12
                     shieldAnimation.drawFrame(ctx,
                         player.x - xOffset, player.y - yOffset,
                         playerWidth + 10, playerWidth + 10)
                 }
-                if(player.inverted) {
+        
+                if (player.inverted) {
                     controlsInvertedAnimation.drawFrame(ctx, player.x, player.y, playerWidth, playerHeight)
                 }
             } else if (player.health === 0) {
                 ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
             }
-        })
+        }
+        
+        if(playerPredictionEnabled.current === true){
+            // Render your player
+            gs.current.predicted.players
+                .filter(p => p.sessionId === yourId)
+                .forEach(renderPlayer)
+            
+            // Render other players
+            renderGs.players
+                .filter(p => p.sessionId !== yourId)
+                .forEach(renderPlayer)
+        } else {
+            // Render all players
+            renderGs.players.forEach(renderPlayer)
+        }
+
 
         // Render powerUps
         renderGs.powerUps.forEach((powerUp) => {
