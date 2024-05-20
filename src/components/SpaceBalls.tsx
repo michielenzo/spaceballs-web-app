@@ -19,6 +19,7 @@ import { SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToLobbyToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 import { Vec2D } from '../utility/math'
+import { applyCSP, prepareCSP } from '../engine/ClientSidePrediction'
 
 // Component config
 interface SpaceBallsProps {
@@ -30,7 +31,7 @@ export interface SpaceBallsMethods {
     onGameStateChange: (newState: string, iat: InterArrivalTime) => void
 }
 
-interface InputState {
+export interface InputState {
     wKey: boolean
     aKey: boolean
     sKey: boolean
@@ -95,7 +96,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const homingBallRadius: number = 25
     const homingBallImageWidth: number = 40
     const homingBallImageHeight: number = 40
-
     const fireBallDiameter: number = 50
 
     let gizmosEnabled: boolean = false
@@ -148,34 +148,15 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 prepareInterpolation_RawTranslation()
             }
 
-            if(playerPredictionEnabled) prepareCSP()
+            if(playerPredictionEnabled) {
+                if(predictedGsSet.current === false){
+                    gs.current.predicted = deepCopy(gs.current.server)
+                    predictedGsSet.current = true
+                }
+                prepareCSP(gs.current.predicted, gs.current.server, yourId)
+            }
         }
     }))
-
-    function prepareCSP(){
-        if(predictedGsSet.current === false){
-            gs.current.predicted = deepCopy(gs.current.server)
-            predictedGsSet.current = true
-        }
-
-        const yourServerPlayer: Player | undefined = gs.current.server.players.find(p => p.sessionId === yourId)
-        const yourPredictedPlayer: Player | undefined = gs.current.predicted.players.find(p => p.sessionId === yourId)
-
-        if (yourServerPlayer && yourPredictedPlayer) {
-            yourPredictedPlayer.health = yourServerPlayer.health
-            yourPredictedPlayer.inverted = yourServerPlayer.inverted
-            yourPredictedPlayer.shield = yourServerPlayer.shield
-
-            // Calculate discrepancy
-            const discrepancyX = yourPredictedPlayer.x - yourServerPlayer.x
-            const discrepancyY = yourPredictedPlayer.y - yourServerPlayer.y
-
-            // Apply correction
-            const correctionFactor = 0.05
-            yourPredictedPlayer.x -= discrepancyX * correctionFactor
-            yourPredictedPlayer.y -= discrepancyY * correctionFactor
-        }
-    }
 
     // This is a hacky implementation to create a copy of a object instead of just copying the reference
     function deepCopy<T>(obj: T): T {
@@ -242,33 +223,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         }
     }, [])
 
-    function predictGamestate(){
-        const predictedPlayer = gs.current.predicted.players.filter(p => p.sessionId === yourId).at(0)
-
-        if(predictedPlayer && predictedPlayer.health > 0){
-            // Move player
-            const playerSpeed = 165
-            let translationX = 0
-            let translationY = 0
-            let speed = playerSpeed * speedFactor.current
-            if(predictedPlayer.inverted) speed = -speed
-
-            if(inputState.current.wKey) translationY -= speed
-            if(inputState.current.aKey) translationX -= speed
-            if(inputState.current.sKey) translationY += speed
-            if(inputState.current.dKey) translationX += speed
-
-            predictedPlayer.x += translationX
-            predictedPlayer.y += translationY
-
-            // Wall collision
-            if(predictedPlayer.x < 0) predictedPlayer.x = 0
-            if(predictedPlayer.x > canvasWidth - playerWidth) predictedPlayer.x = canvasWidth - playerWidth
-            if(predictedPlayer.y < 0) predictedPlayer.y = 0
-            if(predictedPlayer.y > canvasHeight - playerHeight) predictedPlayer.y = canvasHeight - playerHeight
-        }
-    }
-
     /*
      *  This Gameloop implementation uses a recursive structure.
      *  It loops on the animation frame which is optimized for animations.
@@ -320,7 +274,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                     } else if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
                         interpolateGamestate_FactorTranslation()    
                     }
-                    if(playerPredictionEnabled) predictGamestate()
+                    if(playerPredictionEnabled){
+                        applyCSP(
+                            gs.current.predicted, yourId, 
+                            inputState.current, speedFactor.current,
+                            canvasWidth, canvasHeight, playerWidth, playerHeight
+                        )
+                    } 
                     setupImages()
                     render(ctx, canvasRef.current)
                 }
