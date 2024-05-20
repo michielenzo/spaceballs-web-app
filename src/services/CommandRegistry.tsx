@@ -1,12 +1,13 @@
 type CommandFunction = (...args: any[]) => any
 
+// This is a singleton
 class CommandRegistry {
   private static instance: CommandRegistry
   private commands: Record<string, CommandFunction>
 
   private constructor() {
     this.commands = {}
-    this.registerCommand('list', this.listCommands.bind(this))
+    this.register('list', this.listCommands.bind(this))
   }
 
   public static getInstance(): CommandRegistry {
@@ -16,7 +17,7 @@ class CommandRegistry {
     return CommandRegistry.instance
   }
 
-  public registerCommand(name: string, commandFunction: CommandFunction): void {
+  public register(name: string, commandFunction: CommandFunction): void {
     this.commands[name] = commandFunction;
   }
 

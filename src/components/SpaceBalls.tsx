@@ -26,7 +26,7 @@ interface SpaceBallsProps {
     yourId: string
 }
 
-interface SpaceBallsMethods {
+export interface SpaceBallsMethods {
     onGameStateChange: (newState: string, iat: InterArrivalTime) => void
 }
 
@@ -243,13 +243,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }, [])
 
     function predictGamestate(){
-        const playerSpeed = 165
-        let translationX = 0
-        let translationY = 0
-
         const predictedPlayer = gs.current.predicted.players.filter(p => p.sessionId === yourId).at(0)
+
         if(predictedPlayer && predictedPlayer.health > 0){
             // Move player
+            const playerSpeed = 165
+            let translationX = 0
+            let translationY = 0
             let speed = playerSpeed * speedFactor.current
             if(predictedPlayer.inverted) speed = -speed
 
@@ -330,35 +330,35 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     function setupDevConsoleCommands(){
         // Command to toggle gizmo rendering.
-        commandRegistry.registerCommand('gizmos', (arg1: string) => { 
+        commandRegistry.register('gizmos', (arg1: string) => { 
             if(arg1 === "on") { gizmosEnabled = true; return }
             if(arg1 === "off") { gizmosEnabled = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")
         })
 
         // Command to toggle Gamestate interpolation.
-        commandRegistry.registerCommand('csi', (arg1: string) => {
+        commandRegistry.register('csi', (arg1: string) => {
             if(arg1 === "on") { interpolationEnabled = true; return }
             if(arg1 === "off") { interpolationEnabled = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
         })
 
         // Command to toggle Player CSP.
-        commandRegistry.registerCommand('csp', (arg1: string) => {
+        commandRegistry.register('csp', (arg1: string) => {
             if(arg1 === "on") { playerPredictionEnabled.current = true; return }
             if(arg1 === "off") { playerPredictionEnabled.current = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
         })
 
         // Command to switch between CSI strategies
-        commandRegistry.registerCommand('csi-strategy', (arg1: string) => {
+        commandRegistry.register('csi-strategy', (arg1: string) => {
             if(arg1 === "factor") { interpolationStrategy.current = CSI_Strategy_FactorTranslation; return }
             if(arg1 === "raw") { interpolationStrategy.current = CSI_Strategy_RawTranslation; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'factor' or 'raw'")           
         })
 
         // Command to toggle FPS rendering.
-        commandRegistry.registerCommand('fps', (arg1: string) => {
+        commandRegistry.register('fps', (arg1: string) => {
             if(arg1 === "on") { fpsRenderingEnabled.current = true; return }
             if(arg1 === "off") { fpsRenderingEnabled.current = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           

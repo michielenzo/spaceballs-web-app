@@ -1,17 +1,11 @@
 import React, {useState, useEffect, useRef} from 'react'
 import '../css/App.css'
 import WebSocket from 'isomorphic-ws'
-import SpaceBalls from "./SpaceBalls"
-import SpaceBallsMethods from "./SpaceBalls"
-import GameExplanationImage from '../resources/images/game_explanation.png'
+import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
-import { Player } from "../interfaces/LobbyModels"
 import { SendLobbyStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
-
-interface SpaceBallsMethods {
-  onGameStateChange: (newState: string, iat: InterArrivalTime) => void
-}
+import Lobby, { LobbyHandle } from './Lobby'
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -30,16 +24,15 @@ function App() {
 
   // Server state
   const [gameMode, setGameMode] = useState('')
-  const [players, setPlayers] = useState<Player[]>([])
   const [yourId, setYourId] = useState('')
   const [gameStarted, setGameStarted] = useState(false)
   const [connectionLost, setConnectionLost] = useState(false)
   const [connectionFailed, setConnectionFailed] = useState(false)
 
   // Client state
-  const [playerName, setPlayerName] = useState('')
   const socketRef = useRef<WebSocket | null>(null)
-  const spaceBallsRef = useRef<SpaceBallsMethods | null>(null)
+  const spaceBallsRef = useRef<SpaceBallsMethods>(null)
+  const lobbyRef = useRef<LobbyHandle>(null)
 
   //Other
   let iat: InterArrivalTime = {
@@ -85,7 +78,7 @@ function App() {
               case "sendLobbyStateToClients":
                 const dto: SendLobbyStateToClientsDTO = jsonObject
                 setGameMode(dto.lobbyState.gameMode)
-                setPlayers(dto.lobbyState.players)
+                if(lobbyRef.current) lobbyRef.current.setPlayers(dto.lobbyState.players)
                 setYourId(dto.yourId)
                 break
               case "sendSpaceBallsGameStateToClients":
@@ -150,23 +143,6 @@ function App() {
     }, HEARTBEAT_INTERVAL_MILLIS)
   }
 
-  const chooseNameHandler = () => {
-    const dto: ChooseNameToServerDTO = {
-      playerId: yourId,
-      chosenName: playerName,
-      messageType: "chooseNameToServer"
-    }
-    sendMsgToWsServer(JSON.stringify(dto))
-  }
-
-  const startGameHandler = () => {
-    const dto: StartGameToServerDTO = {
-      messageType: "startGameToServer"
-    }
-    sendMsgToWsServer(JSON.stringify(dto))
-    setGameStarted(true)
-  }
-
   function sendMsgToWsServer(message: string) {
     if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
       if (socketRef.current instanceof WebSocket) {
@@ -192,38 +168,10 @@ function App() {
               <p>Refresh the page to reestablish.</p>
             </div>
         ) : (
-            <div className="App">
-              <h1>Space balls</h1>
-              <div className='lobby-explanation-wrapper'>
-                <div className="lobby-gui">
-                  <table>
-                    <tr>
-                      <th>Players</th>
-                      <th>Status</th>
-                    </tr>
-                    {players.map(player => (
-                        <tr>
-                          <td>{player.name}</td>
-                          <td>{player.status}</td>
-                        </tr>
-                    ))}
-                  </table>
-                  <div className="controls">
-                    <input
-                        id="playername-input"
-                        type="text"
-                        value={playerName}
-                        onChange={(e) => setPlayerName(e.target.value)}
-                    />
-                    <button onClick={chooseNameHandler}>Choose name</button>
-                    <button onClick={startGameHandler}>Start game</button>
-                  </div>
-                </div>
-                <div className='game_explanation'>   
-                  <img src={GameExplanationImage} alt="Game explanation image" />
-                </div>
-              </div>
-            </div>
+          <Lobby
+            ref={lobbyRef} yourId={yourId}
+            sendMsgToWsServer={sendMsgToWsServer} setGameStarted={setGameStarted}
+          />
         )}
         <DevConsole />
       </div>
