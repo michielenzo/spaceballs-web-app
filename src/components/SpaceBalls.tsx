@@ -12,7 +12,7 @@ import SaucerImage from '../resources/images/saucer.png'
 import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
-import {SpriteSheetAnimator} from "../services/SpriteSheetAnimator"
+import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
 import { GameState, GameObject, Player, HomingBall, FireBall, PowerUp } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
 import { SendInputStateToServerDTO } from '../interfaces/DTO'
@@ -62,7 +62,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const init : InputState = { wKey: false, aKey: false, sKey: false, dKey: false }
     const inputState = useRef<InputState>(init)
 
-    let gameLoopState: GameloopState = GameloopState.NOT_STARTED
+    const gameLoopState = useRef<GameloopState>(GameloopState.NOT_STARTED)
     // Note this might get semi-overridden as requestAnimationFrame has its own rate.
     const frameRate: number = 60
     
@@ -236,8 +236,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         shieldAnimation.setTickRate(5)
         controlsInvertedAnimation.setTickRate(8)
 
-        if(gameLoopState == GameloopState.NOT_STARTED){
-            gameLoopState = GameloopState.RUNNING
+        if(gameLoopState.current == GameloopState.NOT_STARTED){
+            gameLoopState.current = GameloopState.RUNNING
             gameLoop()
         }
     }, [])
@@ -302,7 +302,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 speedFactor.current = (millisPerSecond / fps.current) / millisPerSecond
             }
     
-            if (gameLoopState === GameloopState.RUNNING) {
+            if (gameLoopState.current === GameloopState.RUNNING) {
                 requestAnimationFrame(tick) // Schedule the next frame
             }
         }
@@ -409,7 +409,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
         if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
             if (socketRef.current instanceof WebSocket) {
-                gameLoopState = GameloopState.PAUSED
+                gameLoopState.current = GameloopState.PAUSED
                 socketRef.current.send(JSON.stringify(dto))
             }
         } else { console.error('WebSocket is not open. Message not sent.') }
