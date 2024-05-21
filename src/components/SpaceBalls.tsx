@@ -20,6 +20,10 @@ import { BackToLobbyToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 import { Vec2D } from '../utility/math'
 import { applyCSP, prepareCSP } from '../engine/ClientSidePrediction'
+import { interpolateGamestate_FactorTranslation } from '../engine/ClientSideInterpolation'
+import { interpolateGameState_RawTranslation } from '../engine/ClientSideInterpolation'
+import { prepareInterpolation_RawTranslation } from '../engine/ClientSideInterpolation'
+import { deepCopy } from '../utility/Other'
 
 // Component config
 interface SpaceBallsProps {
@@ -44,7 +48,7 @@ enum GameloopState{
     PAUSED
 }
 
-interface GameStates {
+export interface GameStates {
     server: GameState
     previous: GameState
     interpolated: GameState
@@ -145,7 +149,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             gs.current.server = gameStateDTO.gameState   
             
             if(interpolationStrategy.current === CSI_Strategy_RawTranslation) {
-                prepareInterpolation_RawTranslation()
+                prepareInterpolation_RawTranslation(
+                    gs.current.server, gs.current.interpolated,
+                    iat, IFTMapping.current, fps.current
+                )
             }
 
             if(playerPredictionEnabled) {
@@ -157,58 +164,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
         }
     }))
-
-    // This is a hacky implementation to create a copy of a object instead of just copying the reference
-    function deepCopy<T>(obj: T): T {
-        return JSON.parse(JSON.stringify(obj));
-    }
-
-    // Math / Pseudocode for better CSI with RawTranslation strategy.
-    // interpolationFrameTranslation X,Y = Dist(gs.I -> gs.S) / AvgInterpolationFrames
-    // AvgInterpolationFrames = iat.average / AvgInterpolationFrameDuration
-    // AvgInterpolationFrameDuration = 1000 / FPS 
-    function prepareInterpolation_RawTranslation(){
-        let newGSWithoutPositionUpdates = deepCopy(gs.current.server)
-        const newGSObjs: GameObject[] = [
-            ...newGSWithoutPositionUpdates.fireBalls, 
-            ...newGSWithoutPositionUpdates.homingBalls, 
-            ...newGSWithoutPositionUpdates.players
-        ]
-        const newGSObjsMap = new Map(newGSObjs.map(obj => [obj.id, obj]))
-
-        if (!iat.average || !iat.lastMillis || !gs) return
-
-        let avgInterpolationFrameDuration: number = millisPerSecond / fps.current
-        let avgInterpolationFrames: number = iat.average / avgInterpolationFrameDuration
-
-        function calculateIFT<T extends GameObject>(interpolatedObjects: T[], serverObjects: T[]){
-            const serverMap = new Map(serverObjects.map(obj => [obj.id, obj]))
-
-            interpolatedObjects.forEach(interpolatedObj => {
-                // Keep the old positions 
-                const newGSMatch = newGSObjsMap.get(interpolatedObj.id)
-                if(!newGSMatch) return
-                newGSMatch.x = interpolatedObj.x
-                newGSMatch.y = interpolatedObj.y
-                
-                const serverObjMatch = serverMap.get(interpolatedObj.id)
-                if(!serverObjMatch) return
-
-                const distX = serverObjMatch.x - interpolatedObj.x
-                const distY = serverObjMatch.y - interpolatedObj.y
-                const translationX = distX / avgInterpolationFrames
-                const translationY = distY / avgInterpolationFrames
-
-                IFTMapping.current.set(interpolatedObj.id, { x: translationX, y: translationY })
-            })
-        }
-
-        calculateIFT(gs.current.interpolated.fireBalls, gs.current.server.fireBalls)
-        calculateIFT(gs.current.interpolated.homingBalls, gs.current.server.homingBalls)
-        calculateIFT(gs.current.interpolated.players, gs.current.server.players)
-
-        gs.current.interpolated = newGSWithoutPositionUpdates
-    }
 
     useEffect(() => {
         setupDevConsoleCommands()
@@ -270,9 +225,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 const ctx = canvasRef.current.getContext('2d')
                 if(ctx){
                     if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_RawTranslation) {
-                        interpolateGameState_RawTranslation()
+                        interpolateGameState_RawTranslation(gs.current.interpolated, IFTMapping.current)
                     } else if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
-                        interpolateGamestate_FactorTranslation()    
+                        interpolateGamestate_FactorTranslation(iat, gs.current)    
                     }
                     if(playerPredictionEnabled){
                         applyCSP(
@@ -387,57 +342,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 socketRef.current.send(JSON.stringify(dto))
             }
         } else { console.error('WebSocket is not open. Message not sent.') }
-    }
-
-    // Interpolate certain gameobjects between gs.previous and gs.server
-    function interpolateGamestate_FactorTranslation() {
-        if (!iat.average || !iat.lastMillis || !gs) return
-        const millisSinceGsUpdate = Date.now() - iat.lastMillis
-        const interpolationFactor = millisSinceGsUpdate / iat.average
-
-        function interpolateObjects<T extends GameObject>(
-            previousObjects: T[], 
-            serverObjects: T[], 
-            interpolatedObjects: T[]
-        ) {
-            const serverMap = new Map(serverObjects.map(obj => [obj.id, obj]))
-            const interpolatedMap = new Map(interpolatedObjects.map(obj => [obj.id, obj]))
-
-            previousObjects.forEach(previousObj => {
-                const serverObj = serverMap.get(previousObj.id)
-                const interpolatedObj = interpolatedMap.get(previousObj.id)
-                if (!serverObj || !interpolatedObj) return
-
-                const distanceX = serverObj.x - previousObj.x
-                const distanceY = serverObj.y - previousObj.y
-                interpolatedObj.x = previousObj.x + distanceX * interpolationFactor
-                interpolatedObj.y = previousObj.y + distanceY * interpolationFactor
-            })
-        }
-
-        // Interpolate all game objects
-        interpolateObjects(gs.current.previous.fireBalls, gs.current.server.fireBalls, gs.current.interpolated.fireBalls)
-        interpolateObjects(gs.current.previous.players, gs.current.server.players, gs.current.interpolated.players)
-        interpolateObjects(gs.current.previous.homingBalls, gs.current.server.homingBalls, gs.current.interpolated.homingBalls)
-    }
-
-    function interpolateGameState_RawTranslation() {
-        const interpolatedObjects: GameObject[] = [
-            ...gs.current.interpolated.fireBalls, 
-            ...gs.current.interpolated.homingBalls, 
-            ...gs.current.interpolated.players
-        ]
-
-        interpolatedObjects.forEach(obj => {
-            let IFTMatch: Vec2D | undefined = IFTMapping.current.get(obj.id)
-
-            if(!IFTMatch) {
-                return
-            }
-
-            obj.x += IFTMatch.x
-            obj.y += IFTMatch.y
-        })
     }
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
