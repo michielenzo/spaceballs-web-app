@@ -1,11 +1,13 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react'
 import { Player } from '../interfaces/RoomModels'
+import '../css/Generic.css'
 import { ChooseNameToServerDTO, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
+import { GUIState } from './App'
 
 interface RoomProps {
   sendMsgToWsServer: (message: string) => void
-  setGameStarted: (value: boolean) => void
+  setGUIState: (value: GUIState) => void
   yourId: string
 }
 
@@ -13,7 +15,7 @@ export interface RoomHandle {
   setPlayers: (players: Player[]) => void
 }
 
-const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGameStarted, yourId }, ref) => {
+const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState, yourId }, ref) => {
 
   const [players, setPlayers] = useState<Player[]>([])
   const [playerName, setPlayerName] = useState('')
@@ -38,7 +40,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGameStar
       messageType: 'startGameToServer'
     }
     sendMsgToWsServer(JSON.stringify(dto))
-    setGameStarted(true)
+    setGUIState(GUIState.GAME_STARTED)
   }
 
   return (

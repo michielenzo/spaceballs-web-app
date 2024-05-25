@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { commandRegistry } from '../services/CommandRegistry'
 import { BoundedStack } from '../services/BoundedStack'
+import '../css/Generic.css'
 
 const DevConsole: React.FC = () => {
     const [logs, setLogs] = useState<string[]>([])

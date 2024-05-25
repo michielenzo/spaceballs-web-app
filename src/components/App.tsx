@@ -1,11 +1,16 @@
 import React, {useState, useEffect, useRef} from 'react'
 import '../css/App.css'
+import '../css/Generic.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
 import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
 import Room, { RoomHandle } from './Room'
+import MainMenu from './MainMenu'
+import CreateRoom from './CreateRoom'
+import JoinRoom from './JoinRoom'
+import { ConnectionFailed, ConnectionLost } from './ConnectionError'
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -18,6 +23,16 @@ export interface InterArrivalTime {
   timeline: BoundedStack<number>
 }
 
+export enum GUIState {
+  MAIN_MENU,
+  JOIN_ROOM,
+  CREATE_ROOM,
+  IN_ROOM,
+  GAME_STARTED,
+  CONNECTION_LOST,
+  CONNECTION_FAILED
+}
+
 const HEARTBEAT_INTERVAL_MILLIS = 15000
 
 function App() {
@@ -25,14 +40,13 @@ function App() {
   // Server state
   const [gameMode, setGameMode] = useState('')
   const [yourId, setYourId] = useState('')
-  const [gameStarted, setGameStarted] = useState(false)
-  const [connectionLost, setConnectionLost] = useState(false)
-  const [connectionFailed, setConnectionFailed] = useState(false)
 
   // Client state
   const socketRef = useRef<WebSocket | null>(null)
   const spaceBallsRef = useRef<SpaceBallsMethods>(null)
   const roomRef = useRef<RoomHandle>(null)
+
+  const [state, setGUIState] = useState(GUIState.MAIN_MENU)
 
   //Other
   let iat: InterArrivalTime = {
@@ -55,16 +69,14 @@ function App() {
 
       if (socket instanceof WebSocket) {
         socket.onerror = (event) => {
-          setConnectionFailed(true)
-          setConnectionLost(false)
+          setGUIState(GUIState.CONNECTION_FAILED)
           console.log(event)
         }
       }
 
       if (socket instanceof WebSocket) {
         socket.onopen = () => {
-          setConnectionLost(false)
-          setConnectionFailed(false)
+          setGUIState(GUIState.MAIN_MENU)
           heartbeat(socket)
         }
       }
@@ -82,7 +94,9 @@ function App() {
                 setYourId(dto.yourId)
                 break
               case "sendSpaceBallsGameStateToClients":
-                if (!gameStarted) { setGameStarted(true) }
+                if (state != GUIState.GAME_STARTED) { 
+                  setGUIState(GUIState.GAME_STARTED) 
+                }
 
                 calculateInterArrivalTime()
 
@@ -94,7 +108,7 @@ function App() {
 
                 break
               case "backToRoomToClient":
-                setGameStarted(false)
+                setGUIState(GUIState.IN_ROOM)
                 break
               case "heartbeatAcknowledge":
                 heartbeat(socket)
@@ -109,7 +123,7 @@ function App() {
       if (socket instanceof WebSocket) {
         socket.onclose = () => {
           console.log('WebSocket disconnected')
-          setConnectionLost(true)
+          setGUIState(GUIState.CONNECTION_LOST)
         }
       }
     }
@@ -136,7 +150,7 @@ function App() {
     setTimeout(() => {
       socket?.send(JSON.stringify(dto), (err) => {
         if (err){
-          setConnectionLost(true)
+          setGUIState(GUIState.CONNECTION_LOST)
           console.log(err)
         }
       })
@@ -155,24 +169,25 @@ function App() {
 
   return (
       <div className="App">
-        {gameStarted ? (
+        { state === GUIState.GAME_STARTED ? (
             <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
-        ): connectionFailed ? (
-            <div className="connection-failed">
-              <h1>Could not connect to the server.</h1>
-              <p>Refresh the page, or try again later if the problem persists.</p>
-            </div>
-        ) : connectionLost ? (
-            <div className="connection-lost">
-              <h1>Connection to the server is lost.</h1>
-              <p>Refresh the page to reestablish.</p>
-            </div>
-        ) : (
+        ): state === GUIState.CONNECTION_FAILED ? (
+           <ConnectionFailed />
+        ) : state === GUIState.CONNECTION_LOST ? (
+           <ConnectionLost />
+        ) : state === GUIState.IN_ROOM ? (
           <Room
             ref={roomRef} yourId={yourId}
-            sendMsgToWsServer={sendMsgToWsServer} setGameStarted={setGameStarted}
+            sendMsgToWsServer={sendMsgToWsServer} setGUIState={setGUIState}
           />
+        ) : state === GUIState.JOIN_ROOM ? (
+           <JoinRoom setGUIState={setGUIState} /> 
+        ) : state === GUIState.CREATE_ROOM ? (
+           <CreateRoom setGUIState={setGUIState} /> 
+        ) : (
+           <MainMenu setGUIState={setGUIState} /> 
         )}
+
         <DevConsole />
       </div>
   )

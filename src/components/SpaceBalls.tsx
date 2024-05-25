@@ -1,6 +1,7 @@
 import React, {forwardRef, useEffect, useImperativeHandle, useRef} from 'react'
 import WebSocket from 'isomorphic-ws'
 import { InterArrivalTime } from './App'
+import '../css/Generic.css'
 import { BoundedStack } from './../services/BoundedStack'
 import ArrowsImage from '../resources/images/arrows.png'
 import HeartImage from '../resources/images/heart_cropped.jpg'
