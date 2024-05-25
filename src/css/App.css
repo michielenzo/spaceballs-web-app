@@ -15,7 +15,7 @@ html, body {
   width: 100vw;
 }
 
-.lobby-gui {
+.room-gui {
   display: inline-block;
   height: auto;
   padding-right: 20px;
@@ -28,7 +28,7 @@ html, body {
   border: 1px solid #ddd;
 }
 
-.lobby-explanation-wrapper {
+.room-explanation-wrapper {
   display: flex;
   justify-content: center;
 }

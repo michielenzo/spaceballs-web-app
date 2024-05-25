@@ -1,8 +1,8 @@
-import { LobbyState } from "./LobbyModels"
+import { RoomState } from "./RoomModels"
 import { GameState } from "./GameStateModels"
 
-export interface SendLobbyStateToClientsDTO {
-  lobbyState: LobbyState,
+export interface SendRoomStateToClientsDTO {
+  roomState: RoomState,
   yourId: string,
   messageType: string
 }
@@ -26,9 +26,9 @@ export interface SendInputStateToServerDTO {
   sessionId: string
 }
 
-export interface BackToLobbyToServerDTO {
+export interface BackToRoomToServerDTO {
   playerId: string
-  messageType: "backToLobbyToServer"
+  messageType: "backToRoomToServer"
 }
 
 export interface SendSpaceBallsGameStateToClientsDTO {

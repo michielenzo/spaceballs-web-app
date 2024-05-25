@@ -4,7 +4,7 @@ export interface Player {
     status: string
 }
 
-export interface LobbyState {
+export interface RoomState {
     gameMode: string
     players: Player[]
 }

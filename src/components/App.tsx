@@ -3,9 +3,9 @@ import '../css/App.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
-import { SendLobbyStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "../interfaces/DTO"
+import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
-import Lobby, { LobbyHandle } from './Lobby'
+import Room, { RoomHandle } from './Room'
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -32,7 +32,7 @@ function App() {
   // Client state
   const socketRef = useRef<WebSocket | null>(null)
   const spaceBallsRef = useRef<SpaceBallsMethods>(null)
-  const lobbyRef = useRef<LobbyHandle>(null)
+  const roomRef = useRef<RoomHandle>(null)
 
   //Other
   let iat: InterArrivalTime = {
@@ -75,10 +75,10 @@ function App() {
             const jsonObject = JSON.parse(event.data)
 
             switch (jsonObject["messageType"]) {
-              case "sendLobbyStateToClients":
-                const dto: SendLobbyStateToClientsDTO = jsonObject
-                setGameMode(dto.lobbyState.gameMode)
-                if(lobbyRef.current) lobbyRef.current.setPlayers(dto.lobbyState.players)
+              case "sendRoomStateToClients":
+                const dto: SendRoomStateToClientsDTO = jsonObject
+                setGameMode(dto.roomState.gameMode)
+                if(roomRef.current) roomRef.current.setPlayers(dto.roomState.players)
                 setYourId(dto.yourId)
                 break
               case "sendSpaceBallsGameStateToClients":
@@ -93,7 +93,7 @@ function App() {
                 }
 
                 break
-              case "backToLobbyToClient":
+              case "backToRoomToClient":
                 setGameStarted(false)
                 break
               case "heartbeatAcknowledge":
@@ -168,8 +168,8 @@ function App() {
               <p>Refresh the page to reestablish.</p>
             </div>
         ) : (
-          <Lobby
-            ref={lobbyRef} yourId={yourId}
+          <Room
+            ref={roomRef} yourId={yourId}
             sendMsgToWsServer={sendMsgToWsServer} setGameStarted={setGameStarted}
           />
         )}

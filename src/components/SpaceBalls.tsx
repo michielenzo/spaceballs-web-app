@@ -16,7 +16,7 @@ import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
 import { GameState, GameObject, Player, HomingBall, FireBall, PowerUp } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
 import { SendInputStateToServerDTO } from '../interfaces/DTO'
-import { BackToLobbyToServerDTO } from '../interfaces/DTO'
+import { BackToRoomToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 import { Vec2D } from '../utility/math'
 import { applyCSP, prepareCSP } from '../engine/ClientSidePrediction'
@@ -313,14 +313,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
                 case "KeyA": inputState.current.aKey = false; break
                 case "KeyS": inputState.current.sKey = false; break
                 case "KeyD": inputState.current.dKey = false; break
-                case "Escape": requestToGoBackToLobby(); return;
+                case "Escape": requestToGoBackToRoom(); return;
             }
             sendInputStateToServer()
         })
     }
 
-    function requestToGoBackToLobby(){
-        let dto: BackToLobbyToServerDTO = { playerId: yourId, messageType: "backToLobbyToServer" }
+    function requestToGoBackToRoom(){
+        let dto: BackToRoomToServerDTO = { playerId: yourId, messageType: "backToRoomToServer" }
 
         if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
             if (socketRef.current instanceof WebSocket) {

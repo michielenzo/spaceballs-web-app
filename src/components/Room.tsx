@@ -1,19 +1,19 @@
 import React, { useState, forwardRef, useImperativeHandle } from 'react'
-import { Player } from '../interfaces/LobbyModels'
+import { Player } from '../interfaces/RoomModels'
 import { ChooseNameToServerDTO, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
 
-interface LobbyProps {
+interface RoomProps {
   sendMsgToWsServer: (message: string) => void
   setGameStarted: (value: boolean) => void
   yourId: string
 }
 
-export interface LobbyHandle {
+export interface RoomHandle {
   setPlayers: (players: Player[]) => void
 }
 
-const Lobby = forwardRef<LobbyHandle, LobbyProps>(({ sendMsgToWsServer, setGameStarted, yourId }, ref) => {
+const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGameStarted, yourId }, ref) => {
 
   const [players, setPlayers] = useState<Player[]>([])
   const [playerName, setPlayerName] = useState('')
@@ -44,8 +44,8 @@ const Lobby = forwardRef<LobbyHandle, LobbyProps>(({ sendMsgToWsServer, setGameS
   return (
     <div className='App'>
       <h1>Space balls</h1>
-      <div className='lobby-explanation-wrapper'>
-        <div className='lobby-gui'>
+      <div className='room-explanation-wrapper'>
+        <div className='room-gui'>
           <table>
             <thead>
               <tr>
@@ -81,4 +81,4 @@ const Lobby = forwardRef<LobbyHandle, LobbyProps>(({ sendMsgToWsServer, setGameS
   )
 })
 
-export default Lobby
+export default Room
