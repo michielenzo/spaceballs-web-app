@@ -1,6 +1,6 @@
 export interface GameState {
     players: Player[]
-    fireBalls: FireBall[]
+    meteorites: Meteorite[]
     powerUps: PowerUp[]
     homingBalls: HomingBall[]
 }
@@ -21,7 +21,7 @@ export interface Player extends GameObject{
 
 export interface HomingBall extends GameObject {}
 
-export interface FireBall extends GameObject{}
+export interface Meteorite extends GameObject{}
 
 export interface PowerUp extends GameObject {
     type: string

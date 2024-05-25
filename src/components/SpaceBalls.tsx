@@ -13,7 +13,7 @@ import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
-import { GameState, GameObject, Player, HomingBall, FireBall, PowerUp } from "../interfaces/GameStateModels"
+import { GameState, GameObject, Player, HomingBall, Meteorite, PowerUp } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
 import { SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
@@ -100,7 +100,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     const homingBallRadius: number = 25
     const homingBallImageWidth: number = 40
     const homingBallImageHeight: number = 40
-    const fireBallDiameter: number = 50
+    const meteoriteDiameter: number = 50
 
     let gizmosEnabled: boolean = false
     let interpolationEnabled: boolean = true
@@ -112,7 +112,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
         timeline: new BoundedStack<number>(100)
     }
 
-    const gameStateInit: GameState = { players: [], fireBalls: [], powerUps: [], homingBalls: [] }
+    const gameStateInit: GameState = { players: [], meteorites: [], powerUps: [], homingBalls: [] }
     const gameStatesInit: GameStates = {
         server: gameStateInit, 
         interpolated: gameStateInit, 
@@ -442,19 +442,19 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
             }
         })
 
-        // Render fireBalls
+        // Render meteorites
         if(gizmosEnabled && interpolationEnabled){
-            gs.current.server.fireBalls.forEach((ball) => {
+            gs.current.server.meteorites.forEach((ball) => {
                 ctx.fillStyle = "#0000ff"
-                drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)
+                drawCircle(ctx, ball.x, ball.y, meteoriteDiameter/2)
             })
-            gs.current.previous.fireBalls.forEach((ball) => {
+            gs.current.previous.meteorites.forEach((ball) => {
                 ctx.fillStyle = "#00ffff"
-                drawCircle(ctx, ball.x, ball.y, fireBallDiameter/2)  
+                drawCircle(ctx, ball.x, ball.y, meteoriteDiameter/2)  
             })
         }
-        renderGs.fireBalls.forEach(ball => {
-            ctx.drawImage(meteoriteImage, ball.x - fireBallDiameter/2, ball.y - fireBallDiameter/2, fireBallDiameter, fireBallDiameter)
+        renderGs.meteorites.forEach(ball => {
+            ctx.drawImage(meteoriteImage, ball.x - meteoriteDiameter/2, ball.y - meteoriteDiameter/2, meteoriteDiameter, meteoriteDiameter)
         })
 
         // Render HUD

@@ -35,7 +35,7 @@ export function interpolateGamestate_FactorTranslation(
     }
 
     // Interpolate all game objects
-    interpolateObjects(gs.previous.fireBalls, gs.server.fireBalls, gs.interpolated.fireBalls)
+    interpolateObjects(gs.previous.meteorites, gs.server.meteorites, gs.interpolated.meteorites)
     interpolateObjects(gs.previous.players, gs.server.players, gs.interpolated.players)
     interpolateObjects(gs.previous.homingBalls, gs.server.homingBalls, gs.interpolated.homingBalls)
 }
@@ -45,7 +45,7 @@ export function interpolateGameState_RawTranslation(
     IFTMapping: Map<number, Vec2D>
 ) {
     const interpolatedObjects: GameObject[] = [
-        ...gsInterpolated.fireBalls, 
+        ...gsInterpolated.meteorites, 
         ...gsInterpolated.homingBalls, 
         ...gsInterpolated.players
     ]
@@ -75,7 +75,7 @@ export function prepareInterpolation_RawTranslation(
 ){
     let newGSWithoutPositionUpdates = deepCopy(gsServer)
     const newGSObjs: GameObject[] = [
-        ...newGSWithoutPositionUpdates.fireBalls, 
+        ...newGSWithoutPositionUpdates.meteorites, 
         ...newGSWithoutPositionUpdates.homingBalls, 
         ...newGSWithoutPositionUpdates.players
     ]
@@ -108,7 +108,7 @@ export function prepareInterpolation_RawTranslation(
         })
     }
 
-    calculateIFT(gsInterpolated.fireBalls, gsServer.fireBalls)
+    calculateIFT(gsInterpolated.meteorites, gsServer.meteorites)
     calculateIFT(gsInterpolated.homingBalls, gsServer.homingBalls)
     calculateIFT(gsInterpolated.players, gsServer.players)
 
