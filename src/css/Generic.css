@@ -15,8 +15,23 @@ button {
     border-radius: 5px;
     cursor: pointer;
     font-size: larger;
-  }
-  
+}
+
 button:hover {
     background-color: #037f58;
+}
+
+.form-box {
+    padding: 20px;
+    background-color: #00000080;
+    border: 1px solid #ddd;
+}
+
+label {
+    color: white;
+    font-size: 1.3em;
+}
+
+input[type="text"] {
+    padding: 7px;
 }

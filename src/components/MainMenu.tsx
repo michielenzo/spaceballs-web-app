@@ -13,7 +13,7 @@ const MainMenu: React.FC<Props> = ({ setGUIState }) => {
         <div>
             <h1>Space balls</h1>
             <div className='main-menu'>
-                <div className='main-menu-gui'>
+                <div className='main-menu-gui form-box'>
                     <button onClick={() => setGUIState(GUIState.CREATE_ROOM)}>Create Room</button>
                     <button onClick={() => setGUIState(GUIState.JOIN_ROOM)}>Join Room</button>
                 </div>

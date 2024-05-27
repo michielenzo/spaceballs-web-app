@@ -4,7 +4,7 @@ import '../css/Generic.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
-import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO } from "../interfaces/DTO"
+import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
 import Room, { RoomHandle } from './Room'
 import MainMenu from './MainMenu'
@@ -62,7 +62,6 @@ function App() {
 
   function setupWebsocket(){
     if (!socketRef.current || !(socketRef.current instanceof WebSocket) || socketRef.current.readyState === WebSocket.CLOSED) {
-      console.log(process.env.NODE_ENV)
       const gameServerWssUrl = process.env.REACT_APP_GAME_SERVER_WS_URL as string
       socketRef.current = new WebSocket(gameServerWssUrl)
       const socket = socketRef.current
@@ -86,14 +85,14 @@ function App() {
           if (typeof event.data === "string") {
             const jsonObject = JSON.parse(event.data)
 
-            switch (jsonObject["messageType"]) {
-              case "sendRoomStateToClients":
+            switch (msgTypeFromString(jsonObject["messageType"])) {
+              case MsgType.SEND_ROOM_STATE_TO_CLIENTS:
                 const dto: SendRoomStateToClientsDTO = jsonObject
                 setGameMode(dto.roomState.gameMode)
                 if(roomRef.current) roomRef.current.setPlayers(dto.roomState.players)
                 setYourId(dto.yourId)
                 break
-              case "sendSpaceBallsGameStateToClients":
+              case MsgType.SEND_SPACEBALLS_GAMESTATE_TO_CLIENTS:
                 if (state != GUIState.GAME_STARTED) { 
                   setGUIState(GUIState.GAME_STARTED) 
                 }
@@ -107,15 +106,15 @@ function App() {
                 }
 
                 break
-              case "backToRoomToClient":
+              case MsgType.BACK_TO_ROOM_TO_CLIENT:
                 setGUIState(GUIState.IN_ROOM)
                 break
-              case "heartbeatAcknowledge":
+              case MsgType.HEARTBEAT_ACKNOWLEDGE:
                 heartbeat(socket)
                 break
             }
           } else {
-            console.error("Websocket message is not of type String.")
+            console.error("Websocket message is not of type string.")
           }
         }
       }
@@ -144,7 +143,7 @@ function App() {
 
   function heartbeat (socket: WebSocket){
     const dto: HeartbeatCheckDTO = {
-      messageType: "heartbeatCheck"
+      messageType: MsgType.HEARTBEAT_CHECK.toString()
     }
 
     setTimeout(() => {
@@ -171,7 +170,7 @@ function App() {
       <div className="App">
         { state === GUIState.GAME_STARTED ? (
             <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
-        ): state === GUIState.CONNECTION_FAILED ? (
+        ) : state === GUIState.CONNECTION_FAILED ? (
            <ConnectionFailed />
         ) : state === GUIState.CONNECTION_LOST ? (
            <ConnectionLost />
@@ -183,7 +182,7 @@ function App() {
         ) : state === GUIState.JOIN_ROOM ? (
            <JoinRoom setGUIState={setGUIState} /> 
         ) : state === GUIState.CREATE_ROOM ? (
-           <CreateRoom setGUIState={setGUIState} /> 
+           <CreateRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
         ) : (
            <MainMenu setGUIState={setGUIState} /> 
         )}

@@ -16,7 +16,7 @@ import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sp
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
 import { GameState, GameObject, Player, HomingBall, Meteorite, PowerUp } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
-import { SendInputStateToServerDTO } from '../interfaces/DTO'
+import { MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 import { Vec2D } from '../utility/math'
@@ -27,7 +27,7 @@ import { prepareInterpolation_RawTranslation } from '../engine/ClientSideInterpo
 import { deepCopy } from '../utility/Other'
 
 // Component config
-interface SpaceBallsProps {
+interface Props {
     socketRef: React.MutableRefObject<WebSocket | null>
     yourId: string
 }
@@ -57,7 +57,7 @@ export interface GameStates {
 }
 
 // Use forwardRef to allow refs to be forwarded to this component
-const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) => {
+const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     const { socketRef, yourId } = props
 
@@ -321,7 +321,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
     }
 
     function requestToGoBackToRoom(){
-        let dto: BackToRoomToServerDTO = { playerId: yourId, messageType: "backToRoomToServer" }
+        let dto: BackToRoomToServerDTO = { 
+            playerId: yourId, messageType: MsgType.BACK_TO_ROOM_TO_SERVER.toString() 
+        }
 
         if(socketRef.current && socketRef.current?.readyState === WebSocket.OPEN){
             if (socketRef.current instanceof WebSocket) {
@@ -333,7 +335,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, SpaceBallsProps>((props, ref) =
 
     function sendInputStateToServer() {
         let dto: SendInputStateToServerDTO = {
-            sessionId: yourId, messageType: "sendInputStateToServer",
+            sessionId: yourId, messageType: MsgType.SEND_INPUT_STATE_TO_SERVER.toString(),
             wKey: inputState.current.wKey, aKey: inputState.current.aKey,
             sKey: inputState.current.sKey, dKey: inputState.current.dKey
         }

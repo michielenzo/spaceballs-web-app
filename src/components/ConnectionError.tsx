@@ -1,4 +1,3 @@
-
 export const ConnectionLost: React.FC = () => {
     return (
       <div className="connection-lost">
