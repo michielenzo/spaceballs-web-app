@@ -16,14 +16,14 @@ const CreateRoom: React.FC<Props> = ({ setGUIState, sendMsgToWsServer }) => {
     const [roomVisibility, setRoomVisibility] = useState<string>("public")
     const [playerName, setPlayerName] = useState<string>("")
     
-    const createGameHandler = () => {
+    const createRoomHandler = () => {
         const dto: CreateRoomToServerDTO = {
             messageType: MsgType.CREATE_ROOM_TO_SERVER,
             roomName: roomName, playerName: playerName,
             isPrivate: roomVisibility === "private",
             maxPlayers: maxPlayers
         }
-
+        
         sendMsgToWsServer(JSON.stringify(dto))
     }
 
@@ -58,7 +58,7 @@ const CreateRoom: React.FC<Props> = ({ setGUIState, sendMsgToWsServer }) => {
                     <label htmlFor="private-option">Private</label>
                 </div>
 
-                <button onClick={createGameHandler}>Create</button>
+                <button onClick={createRoomHandler}>Create</button>
                 <button onClick={() => setGUIState(GUIState.MAIN_MENU)}>Cancel</button>
             </div>
         </div>

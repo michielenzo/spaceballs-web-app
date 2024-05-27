@@ -13,11 +13,19 @@ export enum MsgType {
   HEARTBEAT_CHECK = "heartbeatCheck",
   SEND_INPUT_STATE_TO_SERVER = "sendInputStateToServer",
   BACK_TO_ROOM_TO_SERVER = "backToRoomToServer",
-  CREATE_ROOM_TO_SERVER = "createRoomToServer"
+  CREATE_ROOM_TO_SERVER = "createRoomToServer",
+  JOIN_ROOM_TO_SERVER = "joinRoomToServer",
+  REFRESH_ROOMS_OVERVIEW_TO_SERVER = "refreshRoomsOverviewToServer"
 }
 
 export interface DTO {
   messageType: string
+}
+
+export interface RefreshRoomsOverviewToServer extends DTO {}
+
+export interface JoinRoomToServerDTO extends DTO {
+  roomCode: string
 }
 
 export interface CreateRoomToServerDTO extends DTO {

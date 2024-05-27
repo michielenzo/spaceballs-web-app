@@ -1,0 +1,60 @@
+.join-room-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.join-room-gui {
+    display: flex;
+    flex-direction: column;
+    max-width: 80%;
+}
+
+#enter-room-code-input {
+    font-size: large;
+}
+
+#join-by-code {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 15px;
+}
+
+#cancel-btn {
+    width: 88px;
+    align-self:flex-start;
+}
+
+table {
+    margin: 0 auto;
+    margin-bottom: 15px;
+    border-collapse: collapse;
+    width: 500px;
+}
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #04AA6D;
+    color: white;
+}
+
+th:nth-child(1), td:nth-child(1) {
+    width: 25%;
+}
+
+th:nth-child(2), td:nth-child(2) {
+    width: 57%;
+}
+
+tr:nth-child(odd) {
+    background-color: #f2f2f2;
+}
+
+tr:nth-child(even) {
+    background-color: #ffffff;
+}

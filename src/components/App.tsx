@@ -180,7 +180,7 @@ function App() {
             sendMsgToWsServer={sendMsgToWsServer} setGUIState={setGUIState}
           />
         ) : state === GUIState.JOIN_ROOM ? (
-           <JoinRoom setGUIState={setGUIState} /> 
+           <JoinRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
         ) : state === GUIState.CREATE_ROOM ? (
            <CreateRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
         ) : (
