@@ -43,13 +43,13 @@ th {
     color: white;
 }
 
-th:nth-child(1), td:nth-child(1) {
+/* th:nth-child(1), td:nth-child(1) {
     width: 25%;
 }
 
 th:nth-child(2), td:nth-child(2) {
     width: 57%;
-}
+} */
 
 tr:nth-child(odd) {
     background-color: #f2f2f2;

@@ -4,7 +4,7 @@ import '../css/Generic.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
-import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType } from "../interfaces/DTO"
+import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType, RoomNotFoundToClient } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
 import Room, { RoomHandle } from './Room'
 import MainMenu from './MainMenu'
@@ -46,7 +46,7 @@ function App() {
   const spaceBallsRef = useRef<SpaceBallsMethods>(null)
   const roomRef = useRef<RoomHandle>(null)
 
-  const [state, setGUIState] = useState(GUIState.MAIN_MENU)
+  const [state, setGUIState] = useState(GUIState.IN_ROOM)
 
   //Other
   let iat: InterArrivalTime = {
@@ -75,7 +75,7 @@ function App() {
 
       if (socket instanceof WebSocket) {
         socket.onopen = () => {
-          setGUIState(GUIState.MAIN_MENU)
+          setGUIState(GUIState.IN_ROOM)
           heartbeat(socket)
         }
       }
@@ -89,7 +89,7 @@ function App() {
               case MsgType.SEND_ROOM_STATE_TO_CLIENTS:
                 const dto: SendRoomStateToClientsDTO = jsonObject
                 setGameMode(dto.roomState.gameMode)
-                if(roomRef.current) roomRef.current.setPlayers(dto.roomState.players)
+                if(roomRef.current) roomRef.current.setup(dto.roomState)
                 setYourId(dto.yourId)
                 break
               case MsgType.SEND_SPACEBALLS_GAMESTATE_TO_CLIENTS:
@@ -106,6 +106,11 @@ function App() {
                 }
 
                 break
+              case MsgType.ROOM_NOT_FOUND_TO_CLIENT:
+                const dtoRoomNotFound: RoomNotFoundToClient = jsonObject
+                alert("Room with code: " + dtoRoomNotFound.roomCode + "not found.")
+                console.log("Room not found!!")
+                break  
               case MsgType.BACK_TO_ROOM_TO_CLIENT:
                 setGUIState(GUIState.IN_ROOM)
                 break

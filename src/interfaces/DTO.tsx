@@ -15,16 +15,24 @@ export enum MsgType {
   BACK_TO_ROOM_TO_SERVER = "backToRoomToServer",
   CREATE_ROOM_TO_SERVER = "createRoomToServer",
   JOIN_ROOM_TO_SERVER = "joinRoomToServer",
-  REFRESH_ROOMS_OVERVIEW_TO_SERVER = "refreshRoomsOverviewToServer"
+  REFRESH_ROOMS_OVERVIEW_TO_SERVER = "refreshRoomsOverviewToServer",
+  ROOM_NOT_FOUND_TO_CLIENT = "roomNotFoundToClient"
 }
 
 export interface DTO {
   messageType: string
 }
 
+export interface RoomNotFoundToClient extends DTO {
+  playerId: string
+  roomCode: string
+}
+
 export interface RefreshRoomsOverviewToServer extends DTO {}
 
 export interface JoinRoomToServerDTO extends DTO {
+  playerId: string
+  playerName: string
   roomCode: string
 }
 
@@ -45,7 +53,9 @@ export interface ChooseNameToServerDTO extends DTO  {
   chosenName: string,
 }
 
-export interface StartGameToServerDTO extends DTO {}
+export interface StartGameToServerDTO extends DTO {
+  playerId: string
+}
 
 export interface SendInputStateToServerDTO extends DTO  {
   wKey: boolean

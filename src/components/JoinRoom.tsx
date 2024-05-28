@@ -14,12 +14,7 @@ const JoinRoom: React.FC<Props> = ({ setGUIState, sendMsgToWsServer }) => {
     const [roomCode, setRoomCode] = useState<string>("")
 
     const joinRoomHandler = () => {
-        const dto: JoinRoomToServerDTO = {
-            messageType: MsgType.JOIN_ROOM_TO_SERVER,
-            roomCode: roomCode
-        }
-
-        sendMsgToWsServer(JSON.stringify(dto))
+        console.log("click")
     }
 
     const refreshHandler = () => {

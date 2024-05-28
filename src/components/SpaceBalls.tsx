@@ -467,7 +467,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         let spacingY = 47
         for (let playerIdx = 0; playerIdx < renderGs.players.length; playerIdx++) {
             let player: Player = gs.current.server.players[playerIdx]
-
+            if(!player) return
             ctx.fillStyle = '#ffffff'
             ctx.font = '15px Arial'
             ctx.fillText(player.name, startX, startY + spacingY * playerIdx)

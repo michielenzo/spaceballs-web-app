@@ -1,0 +1,50 @@
+#room-code-wrapper {
+    display: flex;
+    justify-content: center;
+}
+
+#room-code-header {
+   color: rgb(179, 179, 179);
+   max-width: 30%;
+   border: none;
+   margin-top: 0;
+   margin-bottom: 35px;
+   margin-right: 10px; 
+   padding: 23px;
+}
+
+#room-code-header span {
+    color: white;
+    font-size: xx-large;
+}
+
+#join-by-code-wrapper {
+    border: none;
+    padding: 0px;
+    height: fit-content;
+}
+
+#join-by-code-wrapper h3 {
+    color: rgb(179, 179, 179);
+    margin-top: 9px;
+    margin-bottom: 5px;
+}
+
+#join-by-code-wrapper input {
+    color: black;
+    background-color: white;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    padding: 4px;
+    width: 70px;
+    height: 22px;
+    font-size: large;
+    border: 1px solid white;
+    border-radius: 0;
+    text-transform: uppercase;
+}
+
+#join-by-code-wrapper input:focus-visible {
+    outline: none;
+    border: 1px solid lime;
+} 
