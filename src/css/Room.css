@@ -1,11 +1,23 @@
+#header-wrapper {
+    padding-top: 10px;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
+#header-wrapper h1 {
+    margin-right: 15px;
+    border: none;
+}
+
 #room-code-wrapper {
+    margin-left: 15px;
     display: flex;
     justify-content: center;
 }
 
 #room-code-header {
    color: rgb(179, 179, 179);
-   max-width: 30%;
    border: none;
    margin-top: 0;
    margin-bottom: 35px;
@@ -21,7 +33,7 @@
 #join-by-code-wrapper {
     border: none;
     padding: 0px;
-    height: fit-content;
+    height: 92px;
 }
 
 #join-by-code-wrapper h3 {

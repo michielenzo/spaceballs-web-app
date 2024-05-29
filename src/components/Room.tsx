@@ -5,6 +5,7 @@ import '../css/Room.css'
 import { ChooseNameToServerDTO, JoinRoomToServerDTO, MsgType, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
 import { GUIState } from './App'
+import ErrorPopup from './ErrorPopup'
 
 interface RoomProps {
   sendMsgToWsServer: (message: string) => void
@@ -14,6 +15,7 @@ interface RoomProps {
 
 export interface RoomHandle {
   setup: (roomState: RoomState) => void
+  showRoomNotFoundHandle: () => void
 }
 
 const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState, yourId }, ref) => {
@@ -22,11 +24,18 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   const [playerName, setPlayerName] = useState('')
   const [roomCode, setRoomCode] = useState<string>("")
   const [joinRoomCode, setJoinRoomCode] = useState<string>("")
+  const [showError, setShowError] = useState(false)
 
   useImperativeHandle(ref, () => ({
     setup(roomState: RoomState){
       setPlayers(roomState.players)
       setRoomCode(roomState.roomCode)
+    },
+    showRoomNotFoundHandle() {
+      setShowError(true)
+      setTimeout(() => {
+        setShowError(false)
+      }, 3000)
     }
   }))
 
@@ -63,15 +72,18 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
 
   return (
     <div className='App'>
-      <h1>Space balls</h1>
-      <div id='room-code-wrapper'>
-        <h2 id='room-code-header' className='form-box'><i>Room Code:</i> <span>{roomCode}</span></h2>
-        <div id='join-by-code-wrapper' className='form-box'>
-          <h3>JOIN</h3>
-          <input type='text' maxLength={5} 
-                 onKeyDown={joinRoomByCode} value={joinRoomCode}
-                 onChange={(e) => setJoinRoomCode(e.target.value.toUpperCase())} />
+      <div id='header-wrapper'>
+        <h1 className='form-box'>Space balls</h1>
+        <div id='room-code-wrapper'>
+          <h2 id='room-code-header' className='form-box'><i>Room Code:</i> <span>{roomCode}</span></h2>
+          <div id='join-by-code-wrapper' className='form-box'>
+            <h3>JOIN</h3>
+            <input type='text' maxLength={5}
+                   onKeyDown={joinRoomByCode} value={joinRoomCode}
+                   onChange={(e) => setJoinRoomCode(e.target.value.toUpperCase())} />
+          </div>
         </div>
+        {showError && <ErrorPopup message="Room not found." />}
       </div>
 
       <div className='room-explanation-wrapper'>

@@ -108,8 +108,7 @@ function App() {
                 break
               case MsgType.ROOM_NOT_FOUND_TO_CLIENT:
                 const dtoRoomNotFound: RoomNotFoundToClient = jsonObject
-                alert("Room with code: " + dtoRoomNotFound.roomCode + "not found.")
-                console.log("Room not found!!")
+                roomRef.current?.showRoomNotFoundHandle()
                 break  
               case MsgType.BACK_TO_ROOM_TO_CLIENT:
                 setGUIState(GUIState.IN_ROOM)
@@ -182,7 +181,8 @@ function App() {
         ) : state === GUIState.IN_ROOM ? (
           <Room
             ref={roomRef} yourId={yourId}
-            sendMsgToWsServer={sendMsgToWsServer} setGUIState={setGUIState}
+            sendMsgToWsServer={sendMsgToWsServer} 
+            setGUIState={setGUIState}
           />
         ) : state === GUIState.JOIN_ROOM ? (
            <JoinRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
@@ -191,7 +191,7 @@ function App() {
         ) : (
            <MainMenu setGUIState={setGUIState} /> 
         )}
-
+        
         <DevConsole />
       </div>
   )
