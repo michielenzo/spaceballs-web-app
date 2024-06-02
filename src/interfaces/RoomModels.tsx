@@ -7,5 +7,6 @@ export interface Player {
 export interface RoomState {
     gameMode: string
     roomCode: string
+    leaderId: string
     players: Player[]
 }

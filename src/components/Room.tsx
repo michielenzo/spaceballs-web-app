@@ -1,8 +1,8 @@
-import React, { useState, forwardRef, useImperativeHandle } from 'react'
+import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react'
 import { Player, RoomState } from '../interfaces/RoomModels'
 import '../css/Generic.css'
 import '../css/Room.css'
-import { ChooseNameToServerDTO, JoinRoomToServerDTO, MsgType, StartGameToServerDTO } from '../interfaces/DTO'
+import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServer, MsgType, PromotePlayerToServer, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
 import { GUIState } from './App'
 import ErrorPopup from './ErrorPopup'
@@ -25,11 +25,13 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   const [roomCode, setRoomCode] = useState<string>("")
   const [joinRoomCode, setJoinRoomCode] = useState<string>("")
   const [showError, setShowError] = useState(false)
+  const [leaderId, setLeaderId] = useState("")
 
   useImperativeHandle(ref, () => ({
     setup(roomState: RoomState){
       setPlayers(roomState.players)
       setRoomCode(roomState.roomCode)
+      setLeaderId(roomState.leaderId)
     },
     showRoomNotFoundHandle() {
       setShowError(true)
@@ -70,6 +72,26 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
     }
   }
 
+  const kickPlayerHandler = (playerId: string) => {
+    const dto: KickPlayerToServer = {
+      playerId: yourId,
+      playerToKickId: playerId,
+      messageType: MsgType.KICK_PLAYER_TO_SERVER
+    }
+    
+    sendMsgToWsServer(JSON.stringify(dto))
+  }
+
+  const promotePlayerHandler = (playerId: string) => {
+    const dto: PromotePlayerToServer = {
+      playerId: yourId,
+      playerToPromoteId: playerId,
+      messageType: MsgType.PROMOTE_PLAYER_TO_SERVER
+    }
+
+    sendMsgToWsServer(JSON.stringify(dto))   
+  }
+
   return (
     <div className='App'>
       <div id='header-wrapper'>
@@ -93,13 +115,25 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
               <tr>
                 <th>Players</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
               {players.map(player => (
                 <tr key={player.id}>
-                  <td>{player.name}</td>
-                  <td>{player.status}</td>
+                  <td>
+                    <span className={player.id === yourId ? 'bold' : ''}>{player.name}</span>
+                    <span className={player.id === yourId ? 'bold secondary' : 'secondary'} hidden={leaderId !== player.id}><i> | Leader</i></span>
+                  </td>
+                  <td className={player.id === yourId ? 'bold' : ''}>{player.status}</td>
+                  <td className='other-column'>
+                    <button id='kick-btn' onClick={(e) => kickPlayerHandler(player.id)} 
+                            disabled={leaderId !== yourId}
+                            hidden={player.id === yourId}>Kick</button>
+                    <button id='promote-btn' onClick={(e) => promotePlayerHandler(player.id)}
+                            disabled={leaderId !== yourId}
+                            hidden={player.id === yourId}>Promote</button>
+                  </td>
                 </tr>
               ))}
             </tbody>

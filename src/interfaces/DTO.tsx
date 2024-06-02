@@ -16,11 +16,23 @@ export enum MsgType {
   CREATE_ROOM_TO_SERVER = "createRoomToServer",
   JOIN_ROOM_TO_SERVER = "joinRoomToServer",
   REFRESH_ROOMS_OVERVIEW_TO_SERVER = "refreshRoomsOverviewToServer",
-  ROOM_NOT_FOUND_TO_CLIENT = "roomNotFoundToClient"
+  ROOM_NOT_FOUND_TO_CLIENT = "roomNotFoundToClient",
+  KICK_PLAYER_TO_SERVER = "kickPlayerToServer",
+  PROMOTE_PLAYER_TO_SERVER = "promotePlayerToServer"
 }
 
 export interface DTO {
   messageType: string
+}
+
+export interface PromotePlayerToServer extends DTO {
+  playerId: string
+  playerToPromoteId: string
+}
+
+export interface KickPlayerToServer extends DTO {
+  playerId: string
+  playerToKickId: string
 }
 
 export interface RoomNotFoundToClient extends DTO {

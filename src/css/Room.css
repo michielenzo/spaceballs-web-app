@@ -60,3 +60,57 @@
     outline: none;
     border: 1px solid lime;
 } 
+
+th, td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+}
+
+th {
+    background-color: #04AA6D;
+    color: white;
+}
+
+th:nth-child(1), td:nth-child(1) {
+    width: 40%;
+}
+
+th:nth-child(2), td:nth-child(2) {
+    width: 20%;
+}
+
+th:nth-child(3), td:nth-child(3) {
+    width: 20%;
+}
+
+tr:nth-child(odd) {
+    background-color: #f2f2f2;
+}
+
+tr:nth-child(even) {
+    background-color: #ffffff;
+}
+
+.other-column {
+    align-content: center;
+}
+
+.other-column button {
+    font-size: smaller;
+    padding: 5px;
+    margin: 0;
+}
+
+.other-column #kick-btn {
+    margin-right: 10px;
+}
+
+.bold {
+    font-weight: bold;
+}
+
+.secondary {
+    color: gray;
+    font-size: small;
+}

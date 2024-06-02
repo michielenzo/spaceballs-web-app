@@ -43,33 +43,6 @@ table {
   width: 550px;
 }
 
-th, td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
-
-th {
-  background-color: #04AA6D;
-  color: white;
-}
-
-th:nth-child(1), td:nth-child(1) {
-  width: 80%;
-}
-
-th:nth-child(2), td:nth-child(2) {
-  width: 20%;
-}
-
-tr:nth-child(odd) {
-  background-color: #f2f2f2;
-}
-
-tr:nth-child(even) {
-  background-color: #ffffff;
-}
-
 input {
   padding: 10px;
   margin: 10px;

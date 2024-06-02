@@ -17,7 +17,11 @@ button {
     font-size: larger;
 }
 
-button:hover {
+button:disabled {
+    background-color: #797979;
+}
+
+button:not(:disabled):hover {
     background-color: #037f58;
 }
 
