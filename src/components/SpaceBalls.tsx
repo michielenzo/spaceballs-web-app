@@ -106,12 +106,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     let gizmosEnabled: boolean = false
     let interpolationEnabled: boolean = true
 
-    let iat: InterArrivalTime = {
+    let iatInit: InterArrivalTime = {
         current: undefined,
         average: undefined,
         lastMillis: undefined,
         timeline: new BoundedStack<number>(100)
     }
+    const iat = useRef<InterArrivalTime>(iatInit)
 
     const gameStateInit: GameState = { players: [], meteorites: [], powerUps: [], homingBalls: [] }
     const gameStatesInit: GameStates = {
@@ -139,7 +140,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     // Use useImperativeHandle to expose specific functions to parent Components.
     useImperativeHandle(ref, () => ({
         onGameStateChange(newState: string, tempIat: InterArrivalTime) {
-            iat = tempIat
+            iat.current = tempIat
 
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
 
@@ -152,7 +153,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             if(interpolationStrategy.current === CSI_Strategy_RawTranslation) {
                 prepareInterpolation_RawTranslation(
                     gs.current.server, gs.current.interpolated,
-                    iat, IFTMapping.current, fps.current
+                    iat.current, IFTMapping.current, fps.current
                 )
             }
 
@@ -228,7 +229,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                     if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_RawTranslation) {
                         interpolateGameState_RawTranslation(gs.current.interpolated, IFTMapping.current)
                     } else if (interpolationEnabled && interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
-                        interpolateGamestate_FactorTranslation(iat, gs.current)    
+                        interpolateGamestate_FactorTranslation(iat.current, gs.current)    
                     }
                     if(playerPredictionEnabled){
                         applyCSP(
