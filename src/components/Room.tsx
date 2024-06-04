@@ -6,6 +6,7 @@ import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServer, MsgType
 import GameExplanationImage from '../resources/images/game_explanation.png'
 import { GUIState } from './App'
 import ErrorPopup from './ErrorPopup'
+import CustomAlert from './CustomAlert'
 
 interface RoomProps {
   sendMsgToWsServer: (message: string) => void
@@ -16,6 +17,7 @@ interface RoomProps {
 export interface RoomHandle {
   setup: (roomState: RoomState) => void
   showRoomNotFoundHandle: () => void
+  youHaveBeenKickedAlert: () => void
 }
 
 const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState, yourId }, ref) => {
@@ -26,6 +28,8 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   const [joinRoomCode, setJoinRoomCode] = useState<string>("")
   const [showError, setShowError] = useState(false)
   const [leaderId, setLeaderId] = useState("")
+
+  const [alertVisible, setAlertVisible] = useState(false)
 
   useImperativeHandle(ref, () => ({
     setup(roomState: RoomState){
@@ -38,6 +42,9 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
       setTimeout(() => {
         setShowError(false)
       }, 3000)
+    },
+    youHaveBeenKickedAlert(){
+      setAlertVisible(true)
     }
   }))
 
@@ -153,6 +160,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
           <img src={GameExplanationImage} alt='Game explanation image' />
         </div>
       </div>
+      {alertVisible && <CustomAlert message="You have been kicked!" onClose={() => setAlertVisible(false)} />}
     </div>
   )
 })

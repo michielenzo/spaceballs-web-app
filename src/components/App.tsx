@@ -113,6 +113,10 @@ function App() {
               case MsgType.BACK_TO_ROOM_TO_CLIENT:
                 setGUIState(GUIState.IN_ROOM)
                 break
+              case MsgType.YOU_HAVE_BEEN_KICKED_TO_CLIENT:
+                if(state !== GUIState.IN_ROOM) setGUIState(GUIState.IN_ROOM)
+                roomRef.current?.youHaveBeenKickedAlert()
+                break  
               case MsgType.HEARTBEAT_ACKNOWLEDGE:
                 heartbeat(socket)
                 break
