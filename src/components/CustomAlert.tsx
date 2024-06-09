@@ -12,7 +12,7 @@ const CustomAlert: React.FC<CustomAlertProps> = ({ message, onClose }) => {
         <div className="custom-alert-overlay">
             <div className="custom-alert">
                 <h2>{message}</h2>
-                <button onClick={onClose}>OK</button>
+                <button className='btn-type1' onClick={onClose}>OK</button>
             </div>
         </div>
     )
