@@ -6,7 +6,7 @@ h1 {
     display: block;
 }
 
-button {
+.btn-type1 {
     background-color: #04AA6D;
     color: white;
     padding: 8px 12px;
@@ -17,11 +17,11 @@ button {
     font-size: larger;
 }
 
-button:disabled {
+.btn-type1:disabled {
     background-color: #797979;
 }
 
-button:not(:disabled):hover {
+.btn-type1:not(:disabled):hover {
     background-color: #037f58;
 }
 

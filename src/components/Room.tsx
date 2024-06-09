@@ -9,7 +9,7 @@ import ErrorPopup from './ErrorPopup'
 import CustomAlert from './CustomAlert'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faEnvelope, faHippo, faCopy } from '@fortawesome/free-solid-svg-icons'
+import { faCopy, faDoorOpen } from '@fortawesome/free-solid-svg-icons'
 
 interface RoomProps {
   sendMsgToWsServer: (message: string) => void
@@ -68,17 +68,23 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
     setGUIState(GUIState.GAME_STARTED)
   }
 
-  const joinRoomByCode = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      const dto: JoinRoomToServerDTO = {
-        playerName: playerName,
-        playerId: yourId,
-        messageType: MsgType.JOIN_ROOM_TO_SERVER,
-        roomCode: joinRoomCode
-      }
+  const handleJoinIconClick = () => { joinRoomByCode() }
 
-      sendMsgToWsServer(JSON.stringify(dto))
+  const handleRoomCodeInputKeyEvent = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Enter' && joinRoomCode.length == 5) {
+      joinRoomByCode()
     }
+  }
+
+  const joinRoomByCode = () => {
+    const dto: JoinRoomToServerDTO = {
+      playerName: playerName,
+      playerId: yourId,
+      messageType: MsgType.JOIN_ROOM_TO_SERVER,
+      roomCode: joinRoomCode
+    }
+
+    sendMsgToWsServer(JSON.stringify(dto))
   }
 
   const kickPlayerHandler = (playerId: string) => {
@@ -114,12 +120,19 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
       <div id='header-wrapper'>
         <h1 className='form-box'>Space balls</h1>
         <div id='room-code-wrapper'>
-          <h2 id='room-code-header' className='form-box'><i>Room Code:</i> <span>{roomCode}</span> <FontAwesomeIcon icon={faCopy} id='copy-icon' onClick={handleCopyIconClick}/></h2>
+          <h2 id='room-code-header' className='form-box'>
+            <i>Room Code: </i> 
+            <span>{roomCode}</span> 
+            <FontAwesomeIcon icon={faCopy} id='copy-icon' onClick={handleCopyIconClick}/>
+          </h2>
           <div id='join-by-code-wrapper' className='form-box'>
-            <h3>JOIN</h3>
+            <h3>Join Room</h3>
             <input type='text' maxLength={5}
-                   onKeyDown={joinRoomByCode} value={joinRoomCode}
-                   onChange={(e) => setJoinRoomCode(e.target.value.toUpperCase())} />              
+                   onKeyDown={handleRoomCodeInputKeyEvent} value={joinRoomCode}
+                   onChange={(e) => setJoinRoomCode(e.target.value.toUpperCase())} />    
+            <button id='join-btn' disabled={joinRoomCode.length == 5 ? false: true}>
+              <FontAwesomeIcon icon={faDoorOpen} id='join-icon' onClick={handleJoinIconClick} />
+            </button>                 
           </div>
         </div>
         {showError && <ErrorPopup message={`Room ${joinRoomCode} not found.`} color='red'/>}
@@ -145,10 +158,12 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
                   </td>
                   <td className={player.id === yourId ? 'bold' : ''}>{player.status}</td>
                   <td className='other-column'>
-                    <button id='kick-btn' onClick={(e) => kickPlayerHandler(player.id)} 
+                    <button id='kick-btn' className='btn-type1' 
+                            onClick={(e) => kickPlayerHandler(player.id)} 
                             disabled={leaderId !== yourId}
                             hidden={player.id === yourId}>Kick</button>
-                    <button id='promote-btn' onClick={(e) => promotePlayerHandler(player.id)}
+                    <button id='promote-btn' className='btn-type1' 
+                            onClick={(e) => promotePlayerHandler(player.id)}
                             disabled={leaderId !== yourId}
                             hidden={player.id === yourId}>Promote</button>
                   </td>
@@ -163,8 +178,8 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
               value={playerName}
               onChange={(e) => setPlayerName(e.target.value)}
             />
-            <button onClick={chooseNameHandler}>Choose name</button>
-            <button onClick={startGameHandler}>Start game</button>
+            <button className='btn-type1' onClick={chooseNameHandler}>Choose name</button>
+            <button className='btn-type1' onClick={startGameHandler}>Start game</button>
           </div>
         </div>
         <div className='game_explanation'>

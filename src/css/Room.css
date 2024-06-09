@@ -117,11 +117,29 @@ tr:nth-child(even) {
 
 #copy-icon {
     color: #04AA6D;
-    margin-left: 4px;
+    margin-left: 6px;
     position: relative;
     top: -3px;
 }
 
 #copy-icon:hover {
     color: #027a55;
+}
+
+#join-btn:not(:disabled):hover {
+    color: #027a55;
+}
+
+#join-btn {
+    color: #04AA6D;
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    font-size: 26px;
+    margin-right: 8px;
+    position: relative;
+    top: 3px;
+}
+
+#join-btn:disabled {
+    color: #797979;
 }
