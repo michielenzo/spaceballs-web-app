@@ -114,3 +114,14 @@ tr:nth-child(even) {
     color: gray;
     font-size: small;
 }
+
+#copy-icon {
+    color: #04AA6D;
+    margin-left: 4px;
+    position: relative;
+    top: -3px;
+}
+
+#copy-icon:hover {
+    color: #027a55;
+}

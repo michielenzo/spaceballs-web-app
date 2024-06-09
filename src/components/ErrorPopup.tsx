@@ -4,9 +4,10 @@ import '../css/ErrorPopup.css'
 interface Props {
   message: string
   duration?: number // Duration in milliseconds
+  color?: string
 }
 
-const ErrorPopup: React.FC<Props> = ({ message, duration = 3000 }) => {
+const ErrorPopup: React.FC<Props> = ({ message, duration = 3000, color }) => {
   const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
@@ -18,7 +19,8 @@ const ErrorPopup: React.FC<Props> = ({ message, duration = 3000 }) => {
   }, [duration])
 
   return (
-    <div className={`error-popup ${isVisible ? 'fade-in' : 'fade-out'}`}>
+    <div className={`error-popup ${isVisible ? 'fade-in' : 'fade-out'}`} 
+         style={{ backgroundColor: color }}>
       {message} 
     </div>
   )

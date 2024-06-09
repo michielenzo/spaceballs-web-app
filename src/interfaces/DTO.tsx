@@ -26,17 +26,17 @@ export interface DTO {
   messageType: string
 }
 
-export interface PromotePlayerToServer extends DTO {
+export interface PromotePlayerToServerDTO extends DTO {
   playerId: string
   playerToPromoteId: string
 }
 
-export interface KickPlayerToServer extends DTO {
+export interface KickPlayerToServerDTO extends DTO {
   playerId: string
   playerToKickId: string
 }
 
-export interface RoomNotFoundToClient extends DTO {
+export interface RoomNotFoundToClientDTO extends DTO {
   playerId: string
   roomCode: string
 }

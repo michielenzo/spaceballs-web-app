@@ -1,12 +1,15 @@
-import React, { useState, forwardRef, useImperativeHandle, useEffect } from 'react'
+import React, { useState, forwardRef, useImperativeHandle, useEffect, useRef } from 'react'
 import { Player, RoomState } from '../interfaces/RoomModels'
 import '../css/Generic.css'
 import '../css/Room.css'
-import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServer, MsgType, PromotePlayerToServer, StartGameToServerDTO } from '../interfaces/DTO'
+import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServerDTO, MsgType, PromotePlayerToServerDTO, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
 import { GUIState } from './App'
 import ErrorPopup from './ErrorPopup'
 import CustomAlert from './CustomAlert'
+
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faEnvelope, faHippo, faCopy } from '@fortawesome/free-solid-svg-icons'
 
 interface RoomProps {
   sendMsgToWsServer: (message: string) => void
@@ -16,7 +19,7 @@ interface RoomProps {
 
 export interface RoomHandle {
   setup: (roomState: RoomState) => void
-  showRoomNotFoundHandle: () => void
+  showRoomNotFoundHandle: (roomCode: string) => void
   youHaveBeenKickedAlert: () => void
 }
 
@@ -30,6 +33,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   const [leaderId, setLeaderId] = useState("")
 
   const [alertVisible, setAlertVisible] = useState(false)
+  const [copiedMsgVisible, setCopiedMsgVisible] = useState(false)
 
   useImperativeHandle(ref, () => ({
     setup(roomState: RoomState){
@@ -37,15 +41,13 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
       setRoomCode(roomState.roomCode)
       setLeaderId(roomState.leaderId)
     },
-    showRoomNotFoundHandle() {
+    showRoomNotFoundHandle(roomCode: string) {
       setShowError(true)
       setTimeout(() => {
         setShowError(false)
       }, 3000)
     },
-    youHaveBeenKickedAlert(){
-      setAlertVisible(true)
-    }
+    youHaveBeenKickedAlert(){ setAlertVisible(true) },
   }))
 
   const chooseNameHandler = () => {
@@ -80,7 +82,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   }
 
   const kickPlayerHandler = (playerId: string) => {
-    const dto: KickPlayerToServer = {
+    const dto: KickPlayerToServerDTO = {
       playerId: yourId,
       playerToKickId: playerId,
       messageType: MsgType.KICK_PLAYER_TO_SERVER
@@ -90,7 +92,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   }
 
   const promotePlayerHandler = (playerId: string) => {
-    const dto: PromotePlayerToServer = {
+    const dto: PromotePlayerToServerDTO = {
       playerId: yourId,
       playerToPromoteId: playerId,
       messageType: MsgType.PROMOTE_PLAYER_TO_SERVER
@@ -99,20 +101,29 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
     sendMsgToWsServer(JSON.stringify(dto))   
   }
 
+  const handleCopyIconClick = () => {
+    navigator.clipboard.writeText(roomCode)
+    setCopiedMsgVisible(true)
+    setTimeout(() => {
+      setCopiedMsgVisible(false)
+    }, 3000)
+  }
+
   return (
     <div className='App'>
       <div id='header-wrapper'>
         <h1 className='form-box'>Space balls</h1>
         <div id='room-code-wrapper'>
-          <h2 id='room-code-header' className='form-box'><i>Room Code:</i> <span>{roomCode}</span></h2>
+          <h2 id='room-code-header' className='form-box'><i>Room Code:</i> <span>{roomCode}</span> <FontAwesomeIcon icon={faCopy} id='copy-icon' onClick={handleCopyIconClick}/></h2>
           <div id='join-by-code-wrapper' className='form-box'>
             <h3>JOIN</h3>
             <input type='text' maxLength={5}
                    onKeyDown={joinRoomByCode} value={joinRoomCode}
-                   onChange={(e) => setJoinRoomCode(e.target.value.toUpperCase())} />
+                   onChange={(e) => setJoinRoomCode(e.target.value.toUpperCase())} />              
           </div>
         </div>
-        {showError && <ErrorPopup message="Room not found." />}
+        {showError && <ErrorPopup message={`Room ${joinRoomCode} not found.`} color='red'/>}
+        {copiedMsgVisible && <ErrorPopup message="Room Code copied!" color='green'/>}
       </div>
 
       <div className='room-explanation-wrapper'>
