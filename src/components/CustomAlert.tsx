@@ -18,4 +18,4 @@ const CustomAlert: React.FC<CustomAlertProps> = ({ message, onClose }) => {
     )
 }
 
-export default CustomAlert;
+export default CustomAlert

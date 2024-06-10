@@ -1,3 +1,9 @@
+export enum PlayerStatus {
+    READY = "ready",
+    AVAILABLE = "available",
+    IN_GAME = "in game",
+}
+
 export interface Player {
     id: string
     name: string

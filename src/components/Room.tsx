@@ -1,8 +1,8 @@
 import React, { useState, forwardRef, useImperativeHandle, useEffect, useRef } from 'react'
-import { Player, RoomState } from '../interfaces/RoomModels'
+import { Player, PlayerStatus, RoomState } from '../interfaces/RoomModels'
 import '../css/Generic.css'
 import '../css/Room.css'
-import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServerDTO, MsgType, PromotePlayerToServerDTO, StartGameToServerDTO } from '../interfaces/DTO'
+import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServerDTO, MsgType, NotReadyToServerDTO, PromotePlayerToServerDTO, ReadyUpToServerDTO, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
 import { GUIState } from './App'
 import ErrorPopup from './ErrorPopup'
@@ -66,6 +66,22 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
     }
     sendMsgToWsServer(JSON.stringify(dto))
     setGUIState(GUIState.GAME_STARTED)
+  }
+
+  const readyUpHandler = () => {
+    if(players.find((p) => p.id === yourId)?.status === PlayerStatus.AVAILABLE) {
+      const dto: ReadyUpToServerDTO = {
+        playerId: yourId,
+        messageType: MsgType.READY_UP_TO_SERVER  
+      }
+      sendMsgToWsServer(JSON.stringify(dto))
+    } else {
+      const dto: NotReadyToServerDTO = {
+        playerId: yourId,
+        messageType: MsgType.NOT_READY_TO_SERVER  
+      }
+      sendMsgToWsServer(JSON.stringify(dto))
+    }
   }
 
   const handleJoinIconClick = () => { joinRoomByCode() }
@@ -176,10 +192,18 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
               id='playername-input'
               type='text'
               value={playerName}
+              placeholder='Enter name...'
               onChange={(e) => setPlayerName(e.target.value)}
             />
             <button className='btn-type1' onClick={chooseNameHandler}>Choose name</button>
-            <button className='btn-type1' onClick={startGameHandler}>Start game</button>
+            <button className='btn-type1' onClick={() => readyUpHandler()}>
+              { players.find((p) => p.id === yourId)?.status === PlayerStatus.READY ? "Not ready" : "Ready up" }
+            </button>
+            <button className='btn-type1' 
+                    onClick={() => startGameHandler()}
+                    disabled={!(!players.find((p) => p.status === PlayerStatus.AVAILABLE))}>
+                      Start
+            </button>
           </div>
         </div>
         <div className='game_explanation'>

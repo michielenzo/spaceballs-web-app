@@ -19,11 +19,21 @@ export enum MsgType {
   ROOM_NOT_FOUND_TO_CLIENT = "roomNotFoundToClient",
   KICK_PLAYER_TO_SERVER = "kickPlayerToServer",
   PROMOTE_PLAYER_TO_SERVER = "promotePlayerToServer",
-  YOU_HAVE_BEEN_KICKED_TO_CLIENT = "youHaveBeenKickedToClient"
+  YOU_HAVE_BEEN_KICKED_TO_CLIENT = "youHaveBeenKickedToClient",
+  READY_UP_TO_SERVER = "readyUpToServer",
+  NOT_READY_TO_SERVER= "notReadyToServer",
 }
 
 export interface DTO {
   messageType: string
+}
+
+export interface ReadyUpToServerDTO extends DTO {
+  playerId: string
+}
+
+export interface NotReadyToServerDTO extends DTO {
+  playerId: string
 }
 
 export interface PromotePlayerToServerDTO extends DTO {
