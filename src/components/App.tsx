@@ -12,6 +12,9 @@ import CreateRoom from './CreateRoom'
 import JoinRoom from './JoinRoom'
 import { ConnectionFailed, ConnectionLost } from './ConnectionError'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import LazyBackground from './LazyBackground'
+import spaceCroppedImage from '../resources/images/space-cropped.jpg';
+import skullImage from '../resources/images/skull.png';
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -182,25 +185,27 @@ function App() {
 
   return (
       <div className="App">
-        { state === GUIState.GAME_STARTED ? (
-            <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
-        ) : state === GUIState.CONNECTION_FAILED ? (
-           <ConnectionFailed />
-        ) : state === GUIState.CONNECTION_LOST ? (
-           <ConnectionLost />
-        ) : state === GUIState.IN_ROOM ? (
-          <Room
-            ref={roomRef} yourId={yourId}
-            sendMsgToWsServer={sendMsgToWsServer} 
-            setGUIState={setGUIState}
-          />
-        ) : state === GUIState.JOIN_ROOM ? (
-           <JoinRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
-        ) : state === GUIState.CREATE_ROOM ? (
-           <CreateRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
-        ) : (
-           <MainMenu setGUIState={setGUIState} /> 
-        )}
+        <LazyBackground src={spaceCroppedImage} placeholder={skullImage}>
+          { state === GUIState.GAME_STARTED ? (
+              <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
+          ) : state === GUIState.CONNECTION_FAILED ? (
+            <ConnectionFailed />
+          ) : state === GUIState.CONNECTION_LOST ? (
+            <ConnectionLost />
+          ) : state === GUIState.IN_ROOM ? (
+            <Room
+              ref={roomRef} yourId={yourId}
+              sendMsgToWsServer={sendMsgToWsServer} 
+              setGUIState={setGUIState}
+            />
+          ) : state === GUIState.JOIN_ROOM ? (
+            <JoinRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
+          ) : state === GUIState.CREATE_ROOM ? (
+            <CreateRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
+          ) : (
+            <MainMenu setGUIState={setGUIState} /> 
+          )}
+        </LazyBackground>
         
         <DevConsole />
       </div>

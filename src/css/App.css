@@ -6,8 +6,8 @@ html, body {
 .App {
   text-align: center;
   font-family: Arial, sans-serif;
-
-  background-image: url("../resources/images/space-cropped.jpg");
+  /* background-color: gray; */
+  /* background-image: url("../resources/images/space-cropped.jpg"); */
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
