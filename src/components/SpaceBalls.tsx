@@ -16,7 +16,7 @@ import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sp
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
 import { GameState, GameObject, Player, HomingBall, Meteorite, PowerUp } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
-import { MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
+import { GameConfigToClientsDTO, MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 import { Vec2D } from '../utility/math'
@@ -34,6 +34,7 @@ interface Props {
 
 export interface SpaceBallsMethods {
     onGameStateChange: (newState: string, iat: InterArrivalTime) => void
+    onRecieveGameConfig: (gameConfig: GameConfigToClientsDTO) => void
 }
 
 export interface InputState {
@@ -93,15 +94,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
     const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55, 50, 6)
-
-    const powerUpWidth: number = 40
-    const powerUpHeight: number = 40
-    const playerWidth: number = 60
-    const playerHeight: number = 42
-    const homingBallRadius: number = 25
-    const homingBallImageWidth: number = 40
-    const homingBallImageHeight: number = 40
-    const meteoriteDiameter: number = 50
+    
+    const gameConfigInit: GameConfigToClientsDTO = {
+        powerUpWidth: 0, powerUpHeight: 0,
+        playerWidth: 0, playerHeight: 0,
+        homingBallRadius: 0,meteoriteDiameter: 0,
+        playerSpeed: 0, messageType: ""
+    }    
+    const gcfg = useRef<GameConfigToClientsDTO>(gameConfigInit)
 
     let gizmosEnabled: boolean = false
     let interpolationEnabled: boolean = true
@@ -164,7 +164,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                 }
                 prepareCSP(gs.current.predicted, gs.current.server, yourId)
             }
-        }
+        },
+        onRecieveGameConfig(gameConfig: GameConfigToClientsDTO) {
+           gcfg.current = gameConfig
+        },
     }))
 
     useEffect(() => {
@@ -235,7 +238,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                         applyCSP(
                             gs.current.predicted, yourId, 
                             inputState.current, speedFactor.current,
-                            canvasWidth, canvasHeight, playerWidth, playerHeight
+                            canvasWidth, canvasHeight, gcfg.current.playerWidth, gcfg.current.playerHeight,
+                            gcfg.current.playerSpeed
                         )
                     } 
                     setupImages()
@@ -350,21 +354,24 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     function render(ctx: CanvasRenderingContext2D, canvas: HTMLCanvasElement){
         if(gs === undefined) return
-        let renderGs = interpolationEnabled ? gs.current.interpolated : gs.current.server
+        const renderGs = interpolationEnabled ? gs.current.interpolated : gs.current.server
+        const cfg = gcfg.current
 
         // Render Background
         ctx.fillStyle = '#000000'
         ctx.fillRect(0, 0, canvas.width, canvas.height)
 
         // Render homing balls
+        const homingBallImageWidth: number = cfg.homingBallRadius * 1.6
+        const homingBallImageHeight: number = cfg.homingBallRadius * 1.6
         if(gizmosEnabled && interpolationEnabled){
             gs.current.server.homingBalls.forEach((homingBall) => {
                 ctx.fillStyle = "#0000ff"
-                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
+                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, cfg.homingBallRadius)
             })
             gs.current.previous.homingBalls.forEach((homingBall) => {
                 ctx.fillStyle = "#00ffff"
-                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, homingBallRadius)
+                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, cfg.homingBallRadius)
             })
         }
         renderGs.homingBalls.forEach((homingBall) => {
@@ -375,11 +382,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         if(gizmosEnabled && interpolationEnabled){
             gs.current.server.players.forEach((player) => {
                 ctx.fillStyle = "#0000ff"
-                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+                ctx.fillRect(player.x, player.y, cfg.playerWidth, cfg.playerHeight)
             })
             gs.current.previous.players.forEach((player) => {
                 ctx.fillStyle = "#00ffff"
-                ctx.fillRect(player.x, player.y, playerWidth, playerHeight)
+                ctx.fillRect(player.x, player.y, cfg.playerWidth, cfg.playerHeight)
             })
         }
 
@@ -391,21 +398,21 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         
             if (player.health > 0) {
                 ctx.fillStyle = '#8a2be2'
-                ctx.drawImage(saucerImage, player.x, player.y, playerWidth, playerHeight)
+                ctx.drawImage(saucerImage, player.x, player.y, cfg.playerWidth, cfg.playerHeight)
         
                 if (player.shield) {
                     let xOffset = 5
                     let yOffset = 12
                     shieldAnimation.drawFrame(ctx,
                         player.x - xOffset, player.y - yOffset,
-                        playerWidth + 10, playerWidth + 10)
+                        cfg.playerWidth + 10, cfg.playerWidth + 10)
                 }
         
                 if (player.inverted) {
-                    controlsInvertedAnimation.drawFrame(ctx, player.x, player.y, playerWidth, playerHeight)
+                    controlsInvertedAnimation.drawFrame(ctx, player.x, player.y, cfg.playerWidth, cfg.playerHeight)
                 }
             } else if (player.health === 0) {
-                ctx.drawImage(skullImage, player.x, player.y, playerWidth, playerHeight)
+                ctx.drawImage(skullImage, player.x, player.y, cfg.playerWidth, cfg.playerHeight)
             }
         }
         
@@ -430,19 +437,19 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             switch (powerUp.type) {
                 case "inverter":
                     ctx.drawImage(inverterImage,
-                        powerUp.x-5 , powerUp.y-5, powerUpWidth+10, powerUpHeight+10)
+                        powerUp.x-5 , powerUp.y-5, cfg.powerUpWidth+10, cfg.powerUpHeight+10)
                     break
                 case "med_kit":
-                    ctx.drawImage(medKitImage, powerUp.x , powerUp.y, powerUpWidth, powerUpHeight)
+                    ctx.drawImage(medKitImage, powerUp.x , powerUp.y, cfg.powerUpWidth, cfg.powerUpHeight)
                     break
                 case "shield":
                     shieldAnimation.drawFrame(
                         ctx, powerUp.x , powerUp.y,
-                        powerUpWidth * 1.5, powerUpHeight * 1.5)
+                        cfg.powerUpWidth * 1.5, cfg.powerUpHeight * 1.5)
                     break
                 case "control_inverter":
                     ctx.drawImage(controlInverterPUImage,
-                        powerUp.x-5 , powerUp.y-5, powerUpWidth+10, powerUpHeight+10)
+                        powerUp.x-5 , powerUp.y-5, cfg.powerUpWidth+10, cfg.powerUpHeight+10)
             }
         })
 
@@ -450,22 +457,22 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         if(gizmosEnabled && interpolationEnabled){
             gs.current.server.meteorites.forEach((ball) => {
                 ctx.fillStyle = "#0000ff"
-                drawCircle(ctx, ball.x, ball.y, meteoriteDiameter/2)
+                drawCircle(ctx, ball.x, ball.y, cfg.meteoriteDiameter/2)
             })
             gs.current.previous.meteorites.forEach((ball) => {
                 ctx.fillStyle = "#00ffff"
-                drawCircle(ctx, ball.x, ball.y, meteoriteDiameter/2)  
+                drawCircle(ctx, ball.x, ball.y, cfg.meteoriteDiameter/2)  
             })
         }
         renderGs.meteorites.forEach(ball => {
-            ctx.drawImage(meteoriteImage, ball.x - meteoriteDiameter/2, ball.y - meteoriteDiameter/2, meteoriteDiameter, meteoriteDiameter)
+            ctx.drawImage(meteoriteImage, ball.x - cfg.meteoriteDiameter/2, ball.y - cfg.meteoriteDiameter/2, cfg.meteoriteDiameter, cfg.meteoriteDiameter)
         })
 
         // Render HUD
-        let startY = 30
-        let startX = 20
-        let spacingX = 30
-        let spacingY = 47
+        const startY = 30
+        const startX = 20
+        const spacingX = 30
+        const spacingY = 47
         for (let playerIdx = 0; playerIdx < renderGs.players.length; playerIdx++) {
             let player: Player = gs.current.server.players[playerIdx]
             if(!player) return

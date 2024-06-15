@@ -30,13 +30,13 @@ export function applyCSP(
     canvasWidth: number,
     canvasHeight: number,
     playerWidth: number,
-    playerHeight: number
+    playerHeight: number,
+    playerSpeed: number
 ){
     const predictedPlayer = predictedGs.players.filter(p => p.sessionId === yourId).at(0)
 
     if(predictedPlayer && predictedPlayer.health > 0){
         // Move player
-        const playerSpeed = 165
         let translationX = 0
         let translationY = 0
         let speed = playerSpeed * speedFactor

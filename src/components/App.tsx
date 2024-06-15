@@ -4,7 +4,7 @@ import '../css/Generic.css'
 import WebSocket from 'isomorphic-ws'
 import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
-import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType, RoomNotFoundToClientDTO } from "../interfaces/DTO"
+import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType, RoomNotFoundToClientDTO, GameConfigToClientsDTO } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
 import Room, { RoomHandle } from './Room'
 import MainMenu from './MainMenu'
@@ -100,10 +100,13 @@ function App() {
               setYourId(dto.yourId)
               navigate('/?roomCode=' + dto.roomState.roomCode)
               break
+            case MsgType.GAME_CONFIG_TO_CLIENTS:
+              if (state != GUIState.GAME_STARTED) { setGUIState(GUIState.GAME_STARTED) }
+              const dtoGameConfig: GameConfigToClientsDTO = jsonObject 
+              spaceBallsRef.current?.onRecieveGameConfig(dtoGameConfig)
+              break  
             case MsgType.SEND_SPACEBALLS_GAMESTATE_TO_CLIENTS:
-              if (state != GUIState.GAME_STARTED) { 
-                setGUIState(GUIState.GAME_STARTED) 
-              }
+              if (state != GUIState.GAME_STARTED) { setGUIState(GUIState.GAME_STARTED) }
 
               calculateInterArrivalTime()
 

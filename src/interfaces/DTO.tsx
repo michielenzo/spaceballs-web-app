@@ -21,11 +21,22 @@ export enum MsgType {
   PROMOTE_PLAYER_TO_SERVER = "promotePlayerToServer",
   YOU_HAVE_BEEN_KICKED_TO_CLIENT = "youHaveBeenKickedToClient",
   READY_UP_TO_SERVER = "readyUpToServer",
-  NOT_READY_TO_SERVER= "notReadyToServer",
+  NOT_READY_TO_SERVER = "notReadyToServer",
+  GAME_CONFIG_TO_CLIENTS = "gameConfigToClients",
 }
 
 export interface DTO {
   messageType: string
+}
+
+export interface GameConfigToClientsDTO extends DTO {
+  powerUpWidth: number
+  powerUpHeight: number
+  playerWidth: number
+  playerHeight: number
+  homingBallRadius: number
+  meteoriteDiameter: number
+  playerSpeed: number
 }
 
 export interface ReadyUpToServerDTO extends DTO {
