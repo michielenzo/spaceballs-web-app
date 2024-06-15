@@ -13,8 +13,8 @@ import JoinRoom from './JoinRoom'
 import { ConnectionFailed, ConnectionLost } from './ConnectionError'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import LazyBackground from './LazyBackground'
-import spaceCroppedImage from '../resources/images/space-cropped.jpg';
-import skullImage from '../resources/images/skull.png';
+import spaceCroppedImage from '../resources/images/space-cropped.jpg'
+import skullImage from '../resources/images/skull.png'
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -53,7 +53,7 @@ function App() {
 
   const [searchParams] = useSearchParams()
 
-  const navigate = useNavigate();
+  const navigate = useNavigate()
 
   const [state, setGUIState] = useState(GUIState.IN_ROOM)
 

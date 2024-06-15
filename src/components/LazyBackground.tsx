@@ -20,7 +20,7 @@ class LazyBackground extends React.Component<LazyBackgroundProps, LazyBackground
 
     imageLoader.onload = () => {
       this.setState({ src })
-    };
+    }
   }
 
 //   render() {
