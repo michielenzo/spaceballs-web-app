@@ -12,9 +12,10 @@ import ShieldSheetImage from '../resources/images/shield-spritesheet_cropped.png
 import SaucerImage from '../resources/images/saucer.png'
 import ControlInverterPU from '../resources/images/conrol_inverter_powerup.png'
 import HomingBallImage from '../resources/images/homing_ball.png'
+import YellowArrowImage from '../resources/images/yellow_arrow_diagonal_cropped.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
-import { GameState, GameObject, Player, HomingBall, Meteorite, PowerUp } from "../interfaces/GameStateModels"
+import { GameState, GameObject, Player, HomingBall, Meteorite, PowerUp, GameEvent, GameEventType } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
 import { GameConfigToClientsDTO, MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
@@ -91,6 +92,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     const controlInverterPUImage = new Image()
     const homingBallImage = new Image()
     const controlsInvertedSheet = new Image()
+    const yellowArrowImage = new Image()
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
     const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55, 50, 6)
@@ -99,9 +101,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         powerUpWidth: 0, powerUpHeight: 0,
         playerWidth: 0, playerHeight: 0,
         homingBallRadius: 0,meteoriteDiameter: 0,
-        playerSpeed: 0, messageType: ""
+        playerSpeed: 0, messageType: "",
+        meteoritesDirectionInit: []
     }    
     const gcfg = useRef<GameConfigToClientsDTO>(gameConfigInit)
+
+    const meteoritesFreezed = useRef<boolean>(true)
 
     let gizmosEnabled: boolean = false
     let interpolationEnabled: boolean = true
@@ -114,7 +119,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     }
     const iat = useRef<InterArrivalTime>(iatInit)
 
-    const gameStateInit: GameState = { players: [], meteorites: [], powerUps: [], homingBalls: [] }
+    const gameStateInit: GameState = { players: [], meteorites: [], powerUps: [], homingBalls: [], events: [] }
     const gameStatesInit: GameStates = {
         server: gameStateInit, 
         interpolated: gameStateInit, 
@@ -143,6 +148,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             iat.current = tempIat
 
             let gameStateDTO: SendSpaceBallsGameStateToClientsDTO = JSON.parse(newState)
+            
+            processGameEvents(gameStateDTO.gameState.events)
 
             gs.current.previous = deepCopy(gs.current.server)
             if(interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
@@ -169,6 +176,17 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
            gcfg.current = gameConfig
         },
     }))
+
+    function processGameEvents(events: GameEvent[]) {
+        //if(events.length > 0) console.log(events)
+        events.forEach((e) => {
+            switch(e.type){
+                case GameEventType.METEORITES_UNFREEZE: 
+                    meteoritesFreezed.current = false
+                    break
+            }
+        })    
+    }
 
     useEffect(() => {
         setupDevConsoleCommands()
@@ -297,6 +315,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         if(controlInverterPUImage.src === "") controlInverterPUImage.src = ControlInverterPU as string
         if(homingBallImage.src === "") homingBallImage.src = HomingBallImage as string
         if(controlsInvertedSheet.src === "") controlsInvertedSheet.src = ControlsInvertedSheetImage as string
+        if(yellowArrowImage.src === "") yellowArrowImage.src = YellowArrowImage as string
     }
 
     function setupKeyboardInput(){
@@ -465,7 +484,32 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             })
         }
         renderGs.meteorites.forEach(ball => {
-            ctx.drawImage(meteoriteImage, ball.x - cfg.meteoriteDiameter/2, ball.y - cfg.meteoriteDiameter/2, cfg.meteoriteDiameter, cfg.meteoriteDiameter)
+            ctx.drawImage(meteoriteImage, 
+                ball.x - cfg.meteoriteDiameter/2, 
+                ball.y - cfg.meteoriteDiameter/2, 
+                cfg.meteoriteDiameter, 
+                cfg.meteoriteDiameter
+            )
+
+            if(meteoritesFreezed.current){
+                const direction = cfg.meteoritesDirectionInit.find(m => m.id === ball.id)?.direction
+                let xOffset = -(cfg.meteoriteDiameter/2)
+                let yOffset = -(cfg.meteoriteDiameter/2)
+                switch(direction) {
+                    case "DOWN_RIGHT":
+                         drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset + 45, ball.y + yOffset + 45, 40, 40, true, false)
+                         break
+                    case "UP_RIGHT":
+                        drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset + 44, ball.y + yOffset - 38, 40, 40, true, true) 
+                        break
+                    case "DOWN_LEFT": 
+                        drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset - 35, ball.y + yOffset + 48, 40, 40, false, false)
+                        break
+                    case "UP_LEFT": 
+                        drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset - 35, ball.y + yOffset - 35, 40, 40, false, true) 
+                        break
+                }
+            }
         })
 
         // Render HUD
@@ -494,6 +538,33 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
         shieldAnimation.tick()
         controlsInvertedAnimation.tick()
+    }
+
+    function drawImageFlipped(
+        ctx: CanvasRenderingContext2D,
+        image: CanvasImageSource,
+        xPos: number, yPos: number,
+        width: number, height: number,
+        horizontal: boolean, vertical: boolean
+    ){
+        if(horizontal && vertical){
+            ctx.translate(xPos + width/2, yPos + height/2);
+            ctx.scale(-1,-1)
+            ctx.drawImage(image, -(width / 2), -(height / 2), width, height);
+            ctx.setTransform(1,0,0,1,0,0);
+        } else if (horizontal) {
+            ctx.translate(xPos,0);
+            ctx.scale(-1,1);
+            ctx.drawImage(image, -width, yPos, width, height);
+            ctx.setTransform(1,0,0,1,0,0);
+        } else if (vertical) {
+            ctx.translate(0,yPos);
+            ctx.scale(1,-1);
+            ctx.drawImage(image, xPos, -height, width, height);
+            ctx.setTransform(1,0,0,1,0,0);
+        } else {
+            ctx.drawImage(image, xPos, yPos, width, height)
+        }
     }
 
     function drawCircle(ctx: CanvasRenderingContext2D, x: number, y: number, radius: number){
