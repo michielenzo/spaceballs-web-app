@@ -2,6 +2,7 @@ import React, {forwardRef, useEffect, useImperativeHandle, useRef} from 'react'
 import WebSocket from 'isomorphic-ws'
 import { InterArrivalTime } from './App'
 import '../css/Generic.css'
+import '../css/SpaceBalls.css'
 import { BoundedStack } from './../services/BoundedStack'
 import ArrowsImage from '../resources/images/arrows.png'
 import HeartImage from '../resources/images/heart_cropped.jpg'
@@ -529,7 +530,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         })
 
         // Render HUD
-        const startY = 30
+        const startY = 60
         const startX = 20
         const spacingX = 30
         const spacingY = 47
@@ -598,7 +599,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     return (
         <div>
-            <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight}></canvas>
+            <div className='canvas-container'>
+                <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight}></canvas>
+                <button className='btn-type1' id='canvas-back-btn' onClick={requestToGoBackToRoom}>Back (Esc)</button>
+            </div>
         </div>
     )
 })
