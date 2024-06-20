@@ -102,11 +102,14 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         playerWidth: 0, playerHeight: 0,
         homingBallRadius: 0,meteoriteDiameter: 0,
         playerSpeed: 0, messageType: "",
+        countdownMillis: 0,
         meteoritesDirectionInit: []
     }    
     const gcfg = useRef<GameConfigToClientsDTO>(gameConfigInit)
 
     const meteoritesFreezed = useRef<boolean>(true)
+    const countdownCount = useRef<number>(0)
+    const countdownStarted = useRef<boolean>(true)
 
     let gizmosEnabled: boolean = false
     let interpolationEnabled: boolean = true
@@ -174,6 +177,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         },
         onRecieveGameConfig(gameConfig: GameConfigToClientsDTO) {
            gcfg.current = gameConfig
+           countdownCount.current = Math.round(gcfg.current.countdownMillis / 1000)
+           countdown()
         },
     }))
 
@@ -200,6 +205,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             gameLoop()
         }
     }, [])
+
 
     /*
      *  This Gameloop implementation uses a recursive structure.
@@ -241,6 +247,16 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
         requestAnimationFrame(tick)
     }
+
+    function countdown(){
+        setTimeout(() => {
+            countdownCount.current--
+            if(countdownCount.current > 0) {
+                countdown()
+            }
+        }, 1000)
+    }
+
 
     function tickFrame() {
         if (canvasRef.current){
@@ -527,6 +543,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             for (let j = 1; j < player.health + 1; j++) {
                 ctx.drawImage(heartImage, startX + spacingX * (j - 1), startY + 8 + spacingY * playerIdx, 20, 20)
             }
+        }
+
+        // Countdown counter
+        if(meteoritesFreezed.current && countdownCount.current > 0) {
+            ctx.font = '100px Arial'
+            ctx.fillStyle = '#ffffff'
+            ctx.fillText(countdownCount.current.toString(), canvasWidth/2 , canvasHeight/2)
         }
 
         // Render FPS 

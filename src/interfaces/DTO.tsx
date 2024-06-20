@@ -37,6 +37,7 @@ export interface GameConfigToClientsDTO extends DTO {
   homingBallRadius: number
   meteoriteDiameter: number
   playerSpeed: number
+  countdownMillis: number
   meteoritesDirectionInit: MeteoriteDirectionDTO[]
 }
 
