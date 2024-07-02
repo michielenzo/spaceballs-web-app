@@ -13,6 +13,7 @@
     "@types/react": "^18.2.48",
     "@types/react-dom": "^18.2.18",
     "@types/websocket": "^1.0.10",
+    "howler": "^2.2.4",
     "isomorphic-ws": "^5.0.0",
     "nth-check": "^2.1.1",
     "react": "^18.2.0",
@@ -47,5 +48,8 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "@types/howler": "^2.2.11"
   }
 }

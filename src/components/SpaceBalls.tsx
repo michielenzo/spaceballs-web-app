@@ -27,6 +27,9 @@ import { interpolateGamestate_FactorTranslation } from '../engine/ClientSideInte
 import { interpolateGameState_RawTranslation } from '../engine/ClientSideInterpolation'
 import { prepareInterpolation_RawTranslation } from '../engine/ClientSideInterpolation'
 import { deepCopy } from '../utility/Other'
+import AudioPlayer, { AudioPlayerMethods } from '../engine/AudioPlayer'
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faDoorOpen, faVolumeHigh, faVolumeXmark } from '@fortawesome/free-solid-svg-icons'
 
 // Component config
 interface Props {
@@ -97,6 +100,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
     const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55, 50, 6)
+
+    const audioPlayerRef = useRef<AudioPlayerMethods | null>(null)
     
     const gameConfigInit: GameConfigToClientsDTO = {
         powerUpWidth: 0, powerUpHeight: 0,
@@ -110,7 +115,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     const meteoritesFreezed = useRef<boolean>(true)
     const countdownCount = useRef<number>(0)
-    const countdownStarted = useRef<boolean>(true)
 
     let gizmosEnabled: boolean = false
     let interpolationEnabled: boolean = true
@@ -179,20 +183,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         onRecieveGameConfig(gameConfig: GameConfigToClientsDTO) {
            gcfg.current = gameConfig
            countdownCount.current = Math.round(gcfg.current.countdownMillis / 1000)
+           playSound('countdown')
            countdown()
         },
     }))
-
-    function processGameEvents(events: GameEvent[]) {
-        //if(events.length > 0) console.log(events)
-        events.forEach((e) => {
-            switch(e.type){
-                case GameEventType.METEORITES_UNFREEZE: 
-                    meteoritesFreezed.current = false
-                    break
-            }
-        })    
-    }
 
     useEffect(() => {
         setupDevConsoleCommands()
@@ -206,7 +200,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             gameLoop()
         }
     }, [])
-
 
     /*
      *  This Gameloop implementation uses a recursive structure.
@@ -249,15 +242,38 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         requestAnimationFrame(tick)
     }
 
+    function processGameEvents(events: GameEvent[]) {
+        events.forEach((e) => {
+            console.log(e)
+            switch(e.type){
+                case GameEventType.METEORITES_UNFREEZE: 
+                    meteoritesFreezed.current = false; break
+                case GameEventType.SHIELD_PICKUP:
+                    playSound('shield'); break
+                case GameEventType.PLAYER_METEORITE_COLLISION:
+                    playSound('meteorite_collision'); break
+                case GameEventType.PLAYER_DIED:
+                    playSound('player_died'); break   
+                case GameEventType.MEDKIT_PICKUP:
+                    playSound('medkit_pickup'); break
+                case GameEventType.PICKUP_CONTROL_INVERTER:
+                    playSound('control_inverter_pickup'); break
+                case GameEventType.START_CONTROLS_INVERTED:
+                    playSound('start_controls_inverted'); break            
+                case GameEventType.INVERTER_PICKUP:
+                    playSound('pickup_inverter'); break    
+            }
+        })    
+    }
+
     function countdown(){
         setTimeout(() => {
             countdownCount.current--
-            if(countdownCount.current > 0) {
-                countdown()
-            }
+            countdownCount.current > 0 ? playSound('countdown') : playSound('countdown_go')
+            
+            if(countdownCount.current > 0) { countdown() }
         }, 1000)
     }
-
 
     function tickFrame() {
         if (canvasRef.current){
@@ -597,11 +613,32 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         ctx.fill()  
     }
 
+    const playSound = (label: string) => {
+        if (audioPlayerRef.current) {
+            audioPlayerRef.current.playSound(label)
+        }
+    }
+
     return (
         <div>
             <div className='canvas-container'>
                 <canvas ref={canvasRef} width={canvasWidth} height={canvasHeight}></canvas>
                 <button className='btn-type1' id='canvas-back-btn' onClick={requestToGoBackToRoom}>Back (Esc)</button>
+
+                <AudioPlayer
+                    ref={audioPlayerRef}
+                    sounds={[
+                        { label: 'meteorite_collision', volume: 1, src: '/assets/sounds/cropped/mixkit-electronic-retro-block-hit-2185-edited-cropped.mp3' },
+                        { label: 'control_inverter_pickup', volume: 1, src: '/assets/sounds/cropped/mixkit-player-jumping-in-a-video-game-2043-edited-cropped.mp3' },
+                        { label: 'countdown_go', volume: 1, src: '/assets/sounds/cropped/mixkit-player-select-notification-2037-edited-cropped.mp3' },
+                        { label: 'medkit_pickup', volume: 1, src: '/assets/sounds/cropped/mixkit-winning-a-coin-video-game-2069-edited-cropped.mp3' },
+                        { label: 'shield', volume: 0.4, src: '/assets/sounds/cropped/Powerup_10.mp3' },
+                        { label: 'countdown', volume: 1, src: '/assets/sounds/cropped/Countdown.mp3' },
+                        { label: 'player_died', volume: 1, src: '/assets/sounds/cropped/163442__under7dude__man-dying-edited-cropped.mp3' },
+                        { label: 'start_controls_inverted', volume: 0.3, src: '/assets/sounds/cropped/mixkit-boss-fight-arcade-232-edited-cropped.mp3' },
+                        { label: 'pickup_inverter', volume: 1, src: '/assets/sounds/cropped/mixkit-whoosh-wind-sweep-2632-edited-cropped.mp3' },
+                    ]}
+                />
             </div>
         </div>
     )

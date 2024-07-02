@@ -1,0 +1,13 @@
+#mute-btn {
+    color: #04AA6D;
+    background-color: rgba(0, 0, 0, 0);
+    border: none;
+    font-size: 24px;
+    position: absolute;
+    top: 8px;
+    right: 5px;
+}
+
+#mute-btn:focus {
+    outline: none;
+}
