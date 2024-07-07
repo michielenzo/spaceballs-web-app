@@ -16,7 +16,7 @@ import HomingBallImage from '../resources/images/homing_ball.png'
 import YellowArrowImage from '../resources/images/yellow_arrow_diagonal_cropped.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
-import { GameState, GameObject, Player, HomingBall, Meteorite, PowerUp, GameEvent, GameEventType } from "../interfaces/GameStateModels"
+import { GameState, Player,GameEvent, GameEventType } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
 import { GameConfigToClientsDTO, MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
@@ -28,8 +28,6 @@ import { interpolateGameState_RawTranslation } from '../engine/ClientSideInterpo
 import { prepareInterpolation_RawTranslation } from '../engine/ClientSideInterpolation'
 import { deepCopy } from '../utility/Other'
 import AudioPlayer, { AudioPlayerMethods } from '../engine/AudioPlayer'
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
-import { faDoorOpen, faVolumeHigh, faVolumeXmark } from '@fortawesome/free-solid-svg-icons'
 
 // Component config
 interface Props {
@@ -100,6 +98,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     const shieldAnimation = new SpriteSheetAnimator(shieldSpriteSheet, 80, 80, 4)
     const controlsInvertedAnimation = new SpriteSheetAnimator(controlsInvertedSheet, 55, 50, 6)
+
+    const gameDecided = useRef<boolean>(false)
+    const gameDecidedTextDisplayed = useRef<boolean>(false)
+    const nameWinner = useRef<string>("")
 
     const audioPlayerRef = useRef<AudioPlayerMethods | null>(null)
     
@@ -261,7 +263,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                 case GameEventType.START_CONTROLS_INVERTED:
                     playSound('start_controls_inverted'); break            
                 case GameEventType.INVERTER_PICKUP:
-                    playSound('pickup_inverter'); break    
+                    playSound('pickup_inverter'); break 
+                case GameEventType.WINNER_DECIDED:
+                    onWinnerDecided(e.data["playerName"]); break;       
             }
         })    
     }
@@ -273,6 +277,16 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             
             if(countdownCount.current > 0) { countdown() }
         }, 1000)
+    }
+
+    function onWinnerDecided(winner: string){
+        gameDecided.current = true
+        nameWinner.current  = winner
+        playSound('winner_decided');
+
+        setTimeout(() => {
+            gameDecidedTextDisplayed.current = true            
+        }, 5000)
     }
 
     function tickFrame() {
@@ -573,7 +587,19 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         if(fpsRenderingEnabled.current){
             ctx.fillStyle = '#ffffff'
             ctx.font = '15px Arial'
-            ctx.fillText("FPS: " + fps.current, 1025, 28)
+            ctx.fillText("FPS: " + fps.current, 985, 28)
+        }
+
+        // Render game won event
+        if(gameDecided.current && !gameDecidedTextDisplayed.current) {
+            let fontSize = 40
+            let text = nameWinner.current + " wins!"
+            let wOffset = -(text.length * (fontSize / 5))
+            let hOffset = -15
+
+            ctx.fillStyle = '#ffffff'
+            ctx.font = fontSize + 'px Arial'
+            ctx.fillText(text, canvasWidth/2 + wOffset, canvasHeight/2 + hOffset)
         }
 
         shieldAnimation.tick()
@@ -637,6 +663,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                         { label: 'player_died', volume: 1, src: '/assets/sounds/cropped/163442__under7dude__man-dying-edited-cropped.mp3' },
                         { label: 'start_controls_inverted', volume: 0.3, src: '/assets/sounds/cropped/mixkit-boss-fight-arcade-232-edited-cropped.mp3' },
                         { label: 'pickup_inverter', volume: 1, src: '/assets/sounds/cropped/mixkit-whoosh-wind-sweep-2632-edited-cropped.mp3' },
+                        { label: 'winner_decided', volume: 1, src: '/assets/sounds/cropped/mixkit-orchestra-positive-finish-695-cropped.mp3' },
                     ]}
                 />
             </div>

@@ -21,11 +21,12 @@ export enum GameEventType {
     PICKUP_CONTROL_INVERTER = "PICKUP_CONTROL_INVERTER",
     START_CONTROLS_INVERTED = "START_CONTROLS_INVERTED",
     INVERTER_PICKUP = "INVERTER_PICKUP",
+    WINNER_DECIDED = "WINNER_DECIDED",
 }
 
 export interface GameEvent {
     type: string,
-    data: Map<string, string>
+    data: Record<string, string>
 }
 
 export interface Player extends GameObject {
