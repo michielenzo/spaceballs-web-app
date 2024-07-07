@@ -193,6 +193,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
               type='text'
               value={playerName}
               placeholder='Enter name...'
+              maxLength={20}
               onChange={(e) => setPlayerName(e.target.value)}
             />
             <button className='btn-type1' onClick={chooseNameHandler}>Choose name</button>
