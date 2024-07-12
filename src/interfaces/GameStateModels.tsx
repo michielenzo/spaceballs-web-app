@@ -22,6 +22,12 @@ export enum GameEventType {
     START_CONTROLS_INVERTED = "START_CONTROLS_INVERTED",
     INVERTER_PICKUP = "INVERTER_PICKUP",
     WINNER_DECIDED = "WINNER_DECIDED",
+    METEORITE_SPAWNED = "METEORITE_SPAWNED",
+}
+
+export enum MeteoriteState {
+    FROZEN = "FROZEN",
+    LOOSE = "LOOSE",
 }
 
 export interface GameEvent {
@@ -39,7 +45,9 @@ export interface Player extends GameObject {
 
 export interface HomingBall extends GameObject {}
 
-export interface Meteorite extends GameObject {}
+export interface Meteorite extends GameObject {
+    state: string
+}
 
 export interface PowerUp extends GameObject {
     type: string

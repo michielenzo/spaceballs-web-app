@@ -16,7 +16,7 @@ import HomingBallImage from '../resources/images/homing_ball.png'
 import YellowArrowImage from '../resources/images/yellow_arrow_diagonal_cropped.png'
 import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sprite_sheet_6_frames.png'
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
-import { GameState, Player,GameEvent, GameEventType } from "../interfaces/GameStateModels"
+import { GameState, Player,GameEvent, GameEventType, MeteoriteState } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
 import { GameConfigToClientsDTO, MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
@@ -136,7 +136,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         predicted: gameStateInit, 
         previous: gameStateInit
     }
-    const interpolatedGsSet = useRef<boolean>(false)
+    
     const predictedGsSet = useRef<boolean>(false)
     const gs = useRef<GameStates>(gameStatesInit)
 
@@ -246,7 +246,6 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
     function processGameEvents(events: GameEvent[]) {
         events.forEach((e) => {
-            console.log(e)
             switch(e.type){
                 case GameEventType.METEORITES_UNFREEZE: 
                     meteoritesFreezed.current = false; break
@@ -265,7 +264,9 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                 case GameEventType.INVERTER_PICKUP:
                     playSound('pickup_inverter'); break 
                 case GameEventType.WINNER_DECIDED:
-                    onWinnerDecided(e.data["playerName"]); break;       
+                    onWinnerDecided(e.data["playerName"]); break
+                case GameEventType.METEORITE_SPAWNED:
+                    onMeteoriteSpawned(e.data["id"], e.data["direction"]); break    
             }
         })    
     }
@@ -277,6 +278,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             
             if(countdownCount.current > 0) { countdown() }
         }, 1000)
+    }
+
+    function onMeteoriteSpawned(id: string, direction: string) {
+        gcfg.current.meteoritesDirectionInit.push({ id: parseInt(id), direction: direction})
     }
 
     function onWinnerDecided(winner: string){
@@ -538,7 +543,7 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                 cfg.meteoriteDiameter
             )
 
-            if(meteoritesFreezed.current){
+            if(ball.state === MeteoriteState.FROZEN){
                 const direction = cfg.meteoritesDirectionInit.find(m => m.id === ball.id)?.direction
                 let xOffset = -(cfg.meteoriteDiameter/2)
                 let yOffset = -(cfg.meteoriteDiameter/2)
