@@ -12,6 +12,7 @@ import CreateRoom from './CreateRoom'
 import JoinRoom from './JoinRoom'
 import { ConnectionFailed, ConnectionLost } from './ConnectionError'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { Helmet } from 'react-helmet'
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -185,6 +186,10 @@ function App() {
 
   return (
       <div className="App">
+        <Helmet>
+          <meta name="google-adsense-account" content="ca-pub-2164777390188769" />
+        </Helmet>
+
         { state === GUIState.GAME_STARTED ? (
             <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
         ) : state === GUIState.CONNECTION_FAILED ? (
@@ -206,8 +211,6 @@ function App() {
         )}
         
         <DevConsole />
-
-        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2164777390188769" crossOrigin="anonymous"></script>
       </div>
   )
 }
