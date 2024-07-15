@@ -187,7 +187,8 @@ function App() {
   return (
       <div className="App">
         <Helmet>
-          <meta name="google-adsense-account" content="ca-pub-2164777390188769" />
+          <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2164777390188769"
+                  crossOrigin="anonymous"></script>
         </Helmet>
 
         { state === GUIState.GAME_STARTED ? (
