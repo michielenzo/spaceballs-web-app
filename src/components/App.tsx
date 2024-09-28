@@ -102,8 +102,12 @@ function App() {
               break
             case MsgType.GAME_CONFIG_TO_CLIENTS:
               if (state != GUIState.GAME_STARTED) { setGUIState(GUIState.GAME_STARTED) }
-              const dtoGameConfig: GameConfigToClientsDTO = jsonObject 
-              spaceBallsRef.current?.onRecieveGameConfig(dtoGameConfig)
+
+              setTimeout(() => { // This timeout is necessary to give the SpaceBalls component a moment to load the images.
+                const dtoGameConfig: GameConfigToClientsDTO = jsonObject 
+                spaceBallsRef.current?.onRecieveGameConfig(dtoGameConfig)
+              }, 100)
+
               break  
             case MsgType.SEND_SPACEBALLS_GAMESTATE_TO_CLIENTS:
               if (state != GUIState.GAME_STARTED) { setGUIState(GUIState.GAME_STARTED) }
