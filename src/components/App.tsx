@@ -7,7 +7,6 @@ import { BoundedStack } from '../services/BoundedStack'
 import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType, RoomNotFoundToClientDTO, GameConfigToClientsDTO } from "../interfaces/DTO"
 import DevConsole from './DevConsole'
 import Room, { RoomHandle } from './Room'
-import MainMenu from './MainMenu'
 import CreateRoom from './CreateRoom'
 import JoinRoom from './JoinRoom'
 import { ConnectionFailed, ConnectionLost } from './ConnectionError'
@@ -205,9 +204,7 @@ function App() {
            <JoinRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
         ) : state === GUIState.CREATE_ROOM ? (
            <CreateRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
-        ) : (
-           <MainMenu setGUIState={setGUIState} /> 
-        )}
+        ): null}
         
         <DevConsole />
       </div>
