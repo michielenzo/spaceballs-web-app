@@ -29,7 +29,8 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   const [playerName, setPlayerName] = useState('')
   const [roomCode, setRoomCode] = useState<string>("")
   const [joinRoomCode, setJoinRoomCode] = useState<string>("")
-  const [showError, setShowError] = useState(false)
+  const [showErrorRoomNotFound, setShowErrorRoomNotFound] = useState(false)
+  const [showErrorInSameRoom, setShowErrorInSameRoom] = useState(false)
   const [leaderId, setLeaderId] = useState("")
 
   const [alertVisible, setAlertVisible] = useState(false)
@@ -42,9 +43,9 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
       setLeaderId(roomState.leaderId)
     },
     showRoomNotFoundHandle(roomCode: string) {
-      setShowError(true)
+      setShowErrorRoomNotFound(true)
       setTimeout(() => {
-        setShowError(false)
+        setShowErrorRoomNotFound(false)
       }, 3000)
     },
     youHaveBeenKickedAlert(){ setAlertVisible(true) },
@@ -93,6 +94,14 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   }
 
   const joinRoomByCode = () => {
+    if(joinRoomCode === roomCode){ 
+      setShowErrorInSameRoom(true)
+      setTimeout(() => {
+        setShowErrorInSameRoom(false)
+      }, 3000) 
+      return 
+    }
+
     const dto: JoinRoomToServerDTO = {
       playerName: playerName,
       playerId: yourId,
@@ -151,7 +160,8 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
             </button>                 
           </div>
         </div>
-        {showError && <ErrorPopup message={`Room ${joinRoomCode} not found.`} color='red'/>}
+        {showErrorInSameRoom && <ErrorPopup message={`Already in room ${joinRoomCode}.`} color='red'/>}
+        {showErrorRoomNotFound && <ErrorPopup message={`Room ${joinRoomCode} not found.`} color='red'/>}
         {copiedMsgVisible && <ErrorPopup message="Room Code copied!" color='green'/>}
       </div>
 

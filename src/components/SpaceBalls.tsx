@@ -549,8 +549,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
                 let yOffset = -(cfg.meteoriteDiameter/2)
                 switch(direction) {
                     case "DOWN_RIGHT":
-                         drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset + 45, ball.y + yOffset + 45, 40, 40, true, false)
-                         break
+                        drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset + 45, ball.y + yOffset + 45, 40, 40, true, false)
+                        break
                     case "UP_RIGHT":
                         drawImageFlipped(ctx, yellowArrowImage, ball.x + xOffset + 44, ball.y + yOffset - 38, 40, 40, true, true) 
                         break
