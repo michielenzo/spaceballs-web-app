@@ -144,6 +144,10 @@ tr:nth-child(even) {
     color: #797979;
 }
 
+#ready-btn {
+    width: 104px;
+}
+
 #playername-input {
     width: 130px;
     position: relative;

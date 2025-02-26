@@ -197,7 +197,7 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
               onChange={(e) => setPlayerName(e.target.value)}
             />
             <button className='btn-type1' onClick={chooseNameHandler}>Choose name</button>
-            <button className='btn-type1' onClick={() => readyUpHandler()}>
+            <button className='btn-type1' onClick={() => readyUpHandler()} id='ready-btn'>
               { players.find((p) => p.id === yourId)?.status === PlayerStatus.READY ? "Not ready" : "Ready up" }
             </button>
             <button className='btn-type1' 
