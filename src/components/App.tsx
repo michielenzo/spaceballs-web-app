@@ -5,12 +5,13 @@ import WebSocket from 'isomorphic-ws'
 import SpaceBalls, { SpaceBallsMethods } from "./SpaceBalls"
 import { BoundedStack } from '../services/BoundedStack'
 import { SendRoomStateToClientsDTO, ChooseNameToServerDTO, StartGameToServerDTO, msgTypeFromString, MsgType, RoomNotFoundToClientDTO, GameConfigToClientsDTO } from "../interfaces/DTO"
-import DevConsole from './DevConsole'
+import DevConsole, { DevconsoleMethods } from './DevConsole'
 import Room, { RoomHandle } from './Room'
 import CreateRoom from './CreateRoom'
 import JoinRoom from './JoinRoom'
 import { ConnectionFailed, ConnectionLost } from './ConnectionError'
 import { useSearchParams, useNavigate } from 'react-router-dom'
+import { ServerRoomsState } from '../interfaces/RoomModels'
 
 interface HeartbeatCheckDTO {
   messageType: string
@@ -37,11 +38,9 @@ const HEARTBEAT_INTERVAL_MILLIS = 15000
 
 function App() {
 
-  // Server state
   const [gameMode, setGameMode] = useState('')
   const [yourId, setYourId] = useState('')
 
-  // Client state
   const socketRef = useRef<WebSocket | null>(null)
   const spaceBallsRef = useRef<SpaceBallsMethods>(null)
   const roomRef = useRef<RoomHandle>(null)
@@ -52,6 +51,8 @@ function App() {
   const navigate = useNavigate();
 
   const [state, setGUIState] = useState(GUIState.IN_ROOM)
+
+  const devConsoleRef = useRef<DevconsoleMethods>(null)
 
   //Other
   let iat: InterArrivalTime = {
@@ -134,6 +135,10 @@ function App() {
             case MsgType.HEARTBEAT_ACKNOWLEDGE:
               heartbeat(socket)
               break
+            case MsgType.ROOMS_SERVER_INFO_TO_CLIENT:
+              let roomsData: ServerRoomsState = JSON.parse(event.data)
+              devConsoleRef.current?.logRoomsToConsole(roomsData)
+              break  
           }
         } else {
           console.error("Websocket message is not of type string.")
@@ -206,7 +211,7 @@ function App() {
            <CreateRoom setGUIState={setGUIState} sendMsgToWsServer={sendMsgToWsServer} /> 
         ): null}
         
-        <DevConsole />
+        <DevConsole ref={devConsoleRef} />
       </div>
   )
 }

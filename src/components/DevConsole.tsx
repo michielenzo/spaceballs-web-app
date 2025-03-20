@@ -1,9 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, forwardRef, useImperativeHandle } from 'react'
 import { commandRegistry } from '../services/CommandRegistry'
 import { BoundedStack } from '../services/BoundedStack'
 import '../css/Generic.css'
+import { ServerRoomsState } from '../interfaces/RoomModels'
 
-const DevConsole: React.FC = () => {
+export interface DevconsoleMethods {
+    logRoomsToConsole: (json: ServerRoomsState) => void
+}
+
+const DevConsole = forwardRef<DevconsoleMethods>((_, ref) => {
     const [logs, setLogs] = useState<string[]>([])
     const [command, setCommand] = useState('')
     const [isVisible, setIsVisible] = useState(false)
@@ -14,6 +19,16 @@ const DevConsole: React.FC = () => {
     const historyCursor = useRef<number>(0)
     const [triggerCaretMove, setTriggerCaretMove] = useState(0); // A counter to force re-render if command is the same.
 
+
+    useImperativeHandle(ref, () => ({
+        logRoomsToConsole(json: ServerRoomsState){
+            let str: string = json.roomsData
+                .map((room: any) => room.roomCode) 
+                .join(" ");
+
+            log(str)
+        }
+    }))
 
     const log = (message: string) => {
         setLogs(prevLogs => [...prevLogs, message])
@@ -161,6 +176,8 @@ const DevConsole: React.FC = () => {
             </div>
         </div>
     )
-}
+})
+
+
 
 export default DevConsole

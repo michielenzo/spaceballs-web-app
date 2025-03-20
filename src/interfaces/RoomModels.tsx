@@ -16,3 +16,7 @@ export interface RoomState {
     leaderId: string
     players: Player[]
 }
+
+export interface ServerRoomsState {
+    roomsData: RoomState[]
+}

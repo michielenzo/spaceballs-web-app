@@ -23,6 +23,8 @@ export enum MsgType {
   READY_UP_TO_SERVER = "readyUpToServer",
   NOT_READY_TO_SERVER = "notReadyToServer",
   GAME_CONFIG_TO_CLIENTS = "gameConfigToClients",
+  REQUEST_SERVER_INFO_TO_SERVER = "requestServerInfoToServer",
+  ROOMS_SERVER_INFO_TO_CLIENT = "roomsServerInfoToClient"
 }
 
 export interface DTO {
@@ -112,4 +114,13 @@ export interface BackToRoomToServerDTO extends DTO  {
 
 export interface SendSpaceBallsGameStateToClientsDTO extends DTO  {
   gameState: GameState
+}
+
+
+export enum ServerInfoType {
+  AVAILABLE_ROOMS = "availableRooms"
+}
+
+export interface RequestServerInfoToServer extends DTO {
+  infoType: ServerInfoType
 }

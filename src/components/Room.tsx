@@ -2,11 +2,12 @@ import React, { useState, forwardRef, useImperativeHandle, useEffect, useRef } f
 import { Player, PlayerStatus, RoomState } from '../interfaces/RoomModels'
 import '../css/Generic.css'
 import '../css/Room.css'
-import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServerDTO, MsgType, NotReadyToServerDTO, PromotePlayerToServerDTO, ReadyUpToServerDTO, StartGameToServerDTO } from '../interfaces/DTO'
+import { ChooseNameToServerDTO, JoinRoomToServerDTO, KickPlayerToServerDTO, MsgType, NotReadyToServerDTO, PromotePlayerToServerDTO, ReadyUpToServerDTO, RequestServerInfoToServer, ServerInfoType, StartGameToServerDTO } from '../interfaces/DTO'
 import GameExplanationImage from '../resources/images/game_explanation.png'
 import { GUIState } from './App'
 import ErrorPopup from './ErrorPopup'
 import CustomAlert from './CustomAlert'
+import { commandRegistry } from '../services/CommandRegistry'
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCopy, faDoorOpen } from '@fortawesome/free-solid-svg-icons'
@@ -37,7 +38,8 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
   const [copiedMsgVisible, setCopiedMsgVisible] = useState(false)
 
   useImperativeHandle(ref, () => ({
-    setup(roomState: RoomState){
+    setup(roomState: RoomState){      
+      setupCommands()  
       setPlayers(roomState.players)
       setRoomCode(roomState.roomCode)
       setLeaderId(roomState.leaderId)
@@ -50,6 +52,17 @@ const Room = forwardRef<RoomHandle, RoomProps>(({ sendMsgToWsServer, setGUIState
     },
     youHaveBeenKickedAlert(){ setAlertVisible(true) },
   }))
+
+  const setupCommands = () => {
+      // Command to see all rooms.
+      commandRegistry.register('rooms', () => {
+        const dto: RequestServerInfoToServer = {
+          messageType: MsgType.REQUEST_SERVER_INFO_TO_SERVER,
+          infoType: ServerInfoType.AVAILABLE_ROOMS
+        }
+        sendMsgToWsServer(JSON.stringify(dto))
+      })
+  }
 
   const chooseNameHandler = () => {
     const dto: ChooseNameToServerDTO = {
