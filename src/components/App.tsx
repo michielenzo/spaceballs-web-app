@@ -138,7 +138,11 @@ function App() {
             case MsgType.ROOMS_SERVER_INFO_TO_CLIENT:
               let roomsData: ServerRoomsState = JSON.parse(event.data)
               devConsoleRef.current?.logRoomsToConsole(roomsData)
-              break  
+              break
+            case MsgType.SERVER_TICK_RATE_CHANGED_TO_CLIENT:
+              // Reset IAT to recalibrate the Client Side interpolation.
+              iat.timeline.clear()
+              break    
           }
         } else {
           console.error("Websocket message is not of type string.")
@@ -194,7 +198,7 @@ function App() {
   return (
       <div className="App">
         { state === GUIState.GAME_STARTED ? (
-            <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} />
+            <SpaceBalls socketRef={socketRef} yourId={yourId} ref={spaceBallsRef} sendMsgToWsServer={sendMsgToWsServer} />
         ) : state === GUIState.CONNECTION_FAILED ? (
            <ConnectionFailed />
         ) : state === GUIState.CONNECTION_LOST ? (

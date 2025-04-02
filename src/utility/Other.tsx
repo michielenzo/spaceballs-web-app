@@ -2,3 +2,8 @@
     export function deepCopy<T>(obj: T): T {
         return JSON.parse(JSON.stringify(obj));
     }
+
+    // Checks wheter a given string is a integer or double value. 
+    export function isNumeric(str: string): boolean {
+        return !isNaN(parseFloat(str)) && isFinite(Number(str));
+    }

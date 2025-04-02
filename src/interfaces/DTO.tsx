@@ -24,7 +24,9 @@ export enum MsgType {
   NOT_READY_TO_SERVER = "notReadyToServer",
   GAME_CONFIG_TO_CLIENTS = "gameConfigToClients",
   REQUEST_SERVER_INFO_TO_SERVER = "requestServerInfoToServer",
-  ROOMS_SERVER_INFO_TO_CLIENT = "roomsServerInfoToClient"
+  ROOMS_SERVER_INFO_TO_CLIENT = "roomsServerInfoToClient",
+  SET_SERVER_TICK_RATE_TO_SERVER = "setServerTickRateToServer",
+  SERVER_TICK_RATE_CHANGED_TO_CLIENT = "serverTickRateChangedToClient",
 }
 
 export interface DTO {
@@ -116,6 +118,10 @@ export interface SendSpaceBallsGameStateToClientsDTO extends DTO  {
   gameState: GameState
 }
 
+export interface SetServerTickRateToServerDTO extends DTO {
+  tickRate: number,
+  playerId: string
+}
 
 export enum ServerInfoType {
   AVAILABLE_ROOMS = "availableRooms"

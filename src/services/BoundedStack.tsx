@@ -43,4 +43,8 @@ export class BoundedStack<T> {
     public get(): T[] {
         return this.stack
     }
+
+    public clear(): void {
+        this.stack = []
+    }
 }

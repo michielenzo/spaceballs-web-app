@@ -18,7 +18,7 @@ import ControlsInvertedSheetImage from '../resources/images/controls_inverted_sp
 import {SpriteSheetAnimator} from "../engine/SpriteSheetAnimator"
 import { GameState, Player,GameEvent, GameEventType, MeteoriteState } from "../interfaces/GameStateModels"
 import { commandRegistry } from '../services/CommandRegistry'
-import { GameConfigToClientsDTO, MsgType, SendInputStateToServerDTO } from '../interfaces/DTO'
+import { GameConfigToClientsDTO, MsgType, SendInputStateToServerDTO, SetServerTickRateToServerDTO } from '../interfaces/DTO'
 import { BackToRoomToServerDTO } from '../interfaces/DTO'
 import { SendSpaceBallsGameStateToClientsDTO } from '../interfaces/DTO'
 import { Vec2D } from '../utility/math'
@@ -26,13 +26,14 @@ import { applyCSP, prepareCSP } from '../engine/ClientSidePrediction'
 import { interpolateGamestate_FactorTranslation } from '../engine/ClientSideInterpolation'
 import { interpolateGameState_RawTranslation } from '../engine/ClientSideInterpolation'
 import { prepareInterpolation_RawTranslation } from '../engine/ClientSideInterpolation'
-import { deepCopy } from '../utility/Other'
+import { deepCopy, isNumeric } from '../utility/Other'
 import AudioPlayer, { AudioPlayerMethods } from '../engine/AudioPlayer'
 
 // Component config
 interface Props {
     socketRef: React.MutableRefObject<WebSocket | null>
     yourId: string
+    sendMsgToWsServer: (message: string) => void
 }
 
 export interface SpaceBallsMethods {
@@ -63,7 +64,7 @@ export interface GameStates {
 // Use forwardRef to allow refs to be forwarded to this component
 const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
-    const { socketRef, yourId } = props
+    const { socketRef, yourId, sendMsgToWsServer } = props
 
     const canvasRef = useRef<HTMLCanvasElement | null>(null)
     const canvasWidth: number = 1100
@@ -73,7 +74,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     const inputState = useRef<InputState>(init)
 
     const gameLoopState = useRef<GameloopState>(GameloopState.NOT_STARTED)
-    // Note this might get semi-overridden as requestAnimationFrame has its own rate.
+
+    // Note: this might get semi-overridden as requestAnimationFrame has its own rate.
     const frameRate: number = 60
     
     const fps = useRef<number>(frameRate)
@@ -81,7 +83,8 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     const fpsRenderingEnabled = useRef<boolean>(false) 
 
     const millisPerSecond = 1000
-    // Multiply movement translation with this factor to make the speed fps independent.
+
+    // Multiply movement translation with this factor to make the speed of the object fps independent.
     const speedFactor = useRef<number>((millisPerSecond / frameRate) / millisPerSecond)
     
     const medKitImage = new Image()
@@ -136,12 +139,13 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         predicted: gameStateInit, 
         previous: gameStateInit
     }
+    const firstGameStateHandled = useRef<boolean>(false)
     
     const predictedGsSet = useRef<boolean>(false)
     const gs = useRef<GameStates>(gameStatesInit)
 
     // IFT is a acronym for interpolationFrameTranslation (self invented), 
-    // which represents the translation for each object to interpolate should translate each interpolation frame. 
+    // which represents the translation for each "object to interpolate" should translate each interpolation frame. 
     // This map maps each interpolation object with its translation vector.
     const IFTMapping = useRef<Map<number, Vec2D>>(new Map<number, Vec2D>())
 
@@ -161,7 +165,11 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             
             processGameEvents(gameStateDTO.gameState.events)
 
-            gs.current.previous = deepCopy(gs.current.server)
+            gs.current.previous = firstGameStateHandled.current 
+                ? deepCopy(gs.current.server)
+                : gameStateDTO.gameState
+            if(!firstGameStateHandled.current) firstGameStateHandled.current = true;    
+
             if(interpolationStrategy.current === CSI_Strategy_FactorTranslation) {
                 gs.current.interpolated = deepCopy(gs.current.previous)
             }
@@ -204,9 +212,10 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
     }, [])
 
     /*
-     *  This Gameloop implementation uses a recursive structure.
-     *  It loops on the animation frame which is optimized for animations.
-     *  A regular while loop in a async function will be blocking.
+     *  This Gameloop implementation uses a semi recursive structure.
+     *  It loops on the animation frame callback which is optimized for animations.
+     *  A regular while loop in a async function is not a option, 
+     *  because it will block the rest of the React app as the while loop takes priority.
      */
     function gameLoop() {
         let lastFrameTime = Date.now()
@@ -354,6 +363,22 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
             if(arg1 === "off") { fpsRenderingEnabled.current = false; return }
             throw new Error(arg1 + " is not a valid parameter. Use 'on' or 'off'")           
         })
+
+        // Command to set the server tickrate
+        commandRegistry.register('tickrate', (arg1: string) => {
+            if(isNumeric(arg1)){ setServerTickRate(arg1); return }
+            throw new Error(arg1 + " is not a valid parameter. Use 'reset' or a number")      
+        })
+    }
+
+    function setServerTickRate(tickrate: string){
+        const tickRate = parseFloat(tickrate)
+        const dto: SetServerTickRateToServerDTO = {
+            tickRate: tickRate,
+            playerId: yourId,
+            messageType: MsgType.SET_SERVER_TICK_RATE_TO_SERVER,
+        }
+        sendMsgToWsServer(JSON.stringify(dto))   
     }
     
     function setupImages(){
@@ -436,12 +461,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
         const homingBallImageWidth: number = cfg.homingBallRadius * 1.6
         const homingBallImageHeight: number = cfg.homingBallRadius * 1.6
         if(gizmosEnabled && interpolationEnabled){
-            gs.current.server.homingBalls.forEach((homingBall) => {
-                ctx.fillStyle = "#0000ff"
-                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, cfg.homingBallRadius)
-            })
             gs.current.previous.homingBalls.forEach((homingBall) => {
                 ctx.fillStyle = "#00ffff"
+                drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, cfg.homingBallRadius)
+            })
+            gs.current.server.homingBalls.forEach((homingBall) => {
+                ctx.fillStyle = "#0000ff"
                 drawCircle(ctx, homingBall.x + homingBallImageWidth/2, homingBall.y + homingBallImageHeight/2, cfg.homingBallRadius)
             })
         }
@@ -451,12 +476,12 @@ const SpaceBalls = forwardRef<SpaceBallsMethods, Props>((props, ref) => {
 
         // Render player Gizmos
         if(gizmosEnabled && interpolationEnabled){
-            gs.current.server.players.forEach((player) => {
-                ctx.fillStyle = "#0000ff"
-                ctx.fillRect(player.x, player.y, cfg.playerWidth, cfg.playerHeight)
-            })
             gs.current.previous.players.forEach((player) => {
                 ctx.fillStyle = "#00ffff"
+                ctx.fillRect(player.x, player.y, cfg.playerWidth, cfg.playerHeight)
+            })
+            gs.current.server.players.forEach((player) => {
+                ctx.fillStyle = "#0000ff"
                 ctx.fillRect(player.x, player.y, cfg.playerWidth, cfg.playerHeight)
             })
         }
